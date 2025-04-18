@@ -1,5 +1,4 @@
 import {
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -18,7 +17,6 @@ import {Formik, FormikProps} from 'formik';
 import * as Yup from 'yup';
 import {useNavigation} from '@react-navigation/native';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
-import Header from '../../components/Header';
 import {moderateScale} from '../../utils/responsive';
 import CountryPicker from 'react-native-country-picker-modal';
 
@@ -117,7 +115,9 @@ const DetailsFill = () => {
                     <CustomTextInput
                       placeholder={Texts.Email_Address}
                       keyboardType="email-address"
-                      onChangeText={handleChange('email')}
+                      onChangeText={text =>
+                        handleChange('email')(text.toLowerCase())
+                      }
                       onBlur={handleBlur('email')}
                       value={values.email}
                     />

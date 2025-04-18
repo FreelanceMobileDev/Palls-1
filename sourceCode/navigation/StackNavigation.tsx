@@ -32,7 +32,8 @@ const Stack = createNativeStackNavigator();
 const StackNavigation = () => {
   return (
     <Stack.Navigator
-      initialRouteName={ROUTE_NAMES.SplashScreen}
+      // initialRouteName={ROUTE_NAMES.SplashScreen}
+      initialRouteName={ROUTE_NAMES.TabNavigation}
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,

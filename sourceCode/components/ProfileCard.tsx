@@ -59,11 +59,11 @@ export default ProfileCard;
 
 const styles = StyleSheet.create({
   card: {
-    height: '78%',
-    width: '85%',
+    height: '82%',
+    width: '89%',
     borderRadius: moderateScale(20),
-    marginLeft: moderateScale(5),
     bottom: moderateScale(50),
+    alignSelf: 'center',
   },
   userImage: {
     width: moderateScale(300),

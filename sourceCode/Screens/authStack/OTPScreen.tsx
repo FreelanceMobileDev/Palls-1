@@ -146,7 +146,10 @@ const OTPScreen = () => {
               <OpacityButton
                 button={{marginVertical: 22, width: '76%'}}
                 name={Texts.Verify}
-                pressButton={handleVerifyOTP}
+                pressButton={
+                  // handleVerifyOTP
+                  () => navigation.navigate(ROUTE_NAMES.VerifyHuman)
+                }
               />
 
               <Text style={styles.signInText}>

@@ -1,173 +1,179 @@
-// import {StyleSheet} from 'react-native';
-// import {Colors, FontsFamilys, FontSize} from '../../../constant';
-// import {moderateScale, scale} from '../../../utils/responsive';
+import {StyleSheet, Dimensions} from 'react-native';
+import {Colors, FontsFamilys, FontSize} from '../../../constant';
+import {moderateScale} from '../../../utils/responsive';
 
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//   },
-//   header: {
-//     marginTop: moderateScale(20),
-//     paddingHorizontal: moderateScale(20),
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//   },
-//   iconButton: {
-//     padding: 5,
-//   },
-//   logoContainer: {
-//     alignItems: 'center',
-//   },
-//   ButtonView: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   toggleContainer: {
-//     marginTop: moderateScale(20),
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//     gap: moderateScale(20),
-//   },
-//   toggleButton: {
-//     paddingHorizontal: scale(20),
-//     paddingVertical: scale(10),
-//     borderRadius: scale(20),
-//     backgroundColor: Colors.white,
-//   },
-//   activeButton: {
-//     backgroundColor: Colors.dark_yellow,
-//   },
-//   toggleText: {
-//     fontFamily: FontsFamilys.Poppins_Medium,
-//     fontSize: FontSize.sixteen,
-//     color: Colors.Black,
-//   },
-//   activeText: {
-//     color: Colors.white,
-//   },
-//   card: {
-//     marginTop: moderateScale(30),
-//     paddingHorizontal: moderateScale(30),
-//   },
-//   buddiesTitle: {
-//     fontSize: FontSize.t_Two,
-//     fontFamily: FontsFamilys.Poppins_Bold,
-//     color: Colors.Black,
-//     marginTop: moderateScale(20),
-//   },
-//   buddiesSubtitle: {
-//     fontSize: FontSize.fourteen,
-//     fontFamily: FontsFamilys.Poppins_Medium,
-//     color: Colors.greyText,
-//     marginBottom: moderateScale(20),
-//   },
-//   grid: {
-//     flexDirection: 'row',
-//     flexWrap: 'wrap',
-//     justifyContent: 'space-between',
-//     gap: moderateScale(15),
-//   },
-//   cardItem: {
-//     width: '47%',
-//     borderRadius: scale(12),
-//     padding: scale(15),
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   cardIcon: {
-//     width: scale(40),
-//     height: scale(40),
-//     marginBottom: scale(10),
-//   },
-//   cardText: {
-//     fontSize: FontSize.font14,
-//     fontFamily: FontsFamilys.medium,
-//     color: Colors.black,
-//     textAlign: 'center',
-//   },
-//   bottomButton: {
-//     marginTop: moderateScale(40),
-//     alignSelf: 'center',
-//   },
-//   buddyCard: {
-//     marginTop: moderateScale(20),
-//   },
-//   modalStyle: {
-//     justifyContent: 'flex-end',
-//     margin: 0,
-//   },
-//   modalOverlay: {
-//     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-//     flex: 1,
-//     justifyContent: 'flex-end',
-//   },
-//   modalContent: {
-//     backgroundColor: Colors.white,
-//     borderTopLeftRadius: scale(20),
-//     borderTopRightRadius: scale(20),
-//     padding: moderateScale(20),
-//   },
-//   modalHeader: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     marginBottom: moderateScale(10),
-//   },
-//   modalTitle: {
-//     fontSize: FontSize.eighteen,
-//     fontFamily: FontsFamilys.Poppins_Bold,
-//     color: Colors.Black,
-//   },
-//   closeText: {
-//     fontSize: FontSize.T_four,
-//     fontFamily: FontsFamilys.Poppins_Bold,
-//     color: Colors.greyText,
-//   },
-//   label: {
-//     marginTop: moderateScale(15),
-//     fontSize: FontSize.fourteen,
-//     fontFamily: FontsFamilys.Poppins_Medium,
-//     color: Colors.Black,
-//   },
-//   sliderValue: {
-//     fontSize: FontSize.fourteen,
-//     fontFamily: FontsFamilys.Poppins_Medium,
-//     color: Colors.Black,
-//     marginTop: scale(5),
-//   },
-//   selectionBox: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     borderWidth: 1,
-//     borderColor: Colors.greyText,
-//     borderRadius: scale(10),
-//     padding: scale(10),
-//     marginTop: scale(10),
-//   },
-//   selectionText: {
-//     fontSize: FontSize.fourteen,
-//     fontFamily: FontsFamilys.Poppins_Medium,
-//     color: Colors.Black,
-//   },
-//   arrow: {
-//     fontSize: FontSize.sixteen,
-//     fontFamily: FontsFamilys.Poppins_Medium,
-//     color: Colors.greyText,
-//   },
-//   applyButton: {
-//     backgroundColor: Colors.dark_yellow,
-//     paddingVertical: scale(12),
-//     borderRadius: scale(10),
-//     alignItems: 'center',
-//     marginTop: moderateScale(20),
-//   },
-//   applyText: {
-//     fontSize: FontSize.sixteen,
-//     fontFamily: FontsFamilys.Poppins_Bold,
-//     color: Colors.white,
-//   },
-// });
+const {width, height} = Dimensions.get('window');
 
-// export default styles;
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: moderateScale(20),
+    marginTop:moderateScale(20)
+  },
+  iconButton: {
+    width: moderateScale(40),
+    height: moderateScale(40),
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: moderateScale(20),
+    shadowColor: '#000',
+    marginLeft: moderateScale(12),
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginRight:moderateScale(10)
+  },
+  logoContainer: {
+    alignItems: 'center',
+  },
+  ButtonView: {
+    flexDirection: 'row',
+  },
+  button: {
+    width: '40%',
+    alignSelf: 'center',
+    borderColor: '#FEB413',
+    backgroundColor: '#FDC93A',
+    borderWidth: 2,
+  },
+  card: {
+    flex: 1,
+  },
+  cardItem: {
+    width: width * 0.4,
+    height: height * 0.2,
+    borderRadius: moderateScale(15),
+    padding: moderateScale(15),
+    marginBottom: moderateScale(20),
+    justifyContent: 'space-between',
+  },
+  cardText: {
+    fontSize: FontSize.sixteen,
+    fontFamily: FontsFamilys.Poppins_Regular,
+    width: '100%',
+  },
+  cardIcon: {
+    width: moderateScale(80),
+    height: moderateScale(80),
+    alignSelf: 'flex-end',
+  },
+  grid: {
+    paddingVertical: moderateScale(20),
+  },
+  buddiesTitle: {
+    fontSize: FontSize.T_three,
+    fontFamily: FontsFamilys.Poppins_Bold,
+    color: Colors.greyText,
+    marginBottom: moderateScale(5),
+  },
+  buddiesSubtitle: {
+    fontSize: FontSize.fourteen,
+    fontFamily: FontsFamilys.Poppins_Regular,
+    color: Colors.greyText,
+    marginBottom: moderateScale(20),
+  },
+  // Modal Styles
+  modalStyle: {
+    margin: 0,
+    justifyContent: 'flex-end',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: moderateScale(20),
+    width: '100%',
+    height: '70%',
+  },
+  modalupperline: {
+    width: '20%',
+    backgroundColor: 'grey',
+    height: 7,
+    opacity: 0.2,
+    marginBottom: moderateScale(25),
+    marginTop: moderateScale(10),
+    alignSelf: 'center',
+    borderRadius: moderateScale(10),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: FontSize.twenty,
+    fontFamily: FontsFamilys.Poppins_SemiBold,
+  },
+  closeText: {
+    fontSize: moderateScale(24),
+    color: '#000',
+  },
+  modallowerline: {
+    width: '100%',
+    backgroundColor: 'grey',
+    height: 1,
+    opacity: 0.2,
+    marginBottom: moderateScale(25),
+    marginTop: moderateScale(10),
+  },
+  label: {
+    fontSize: moderateScale(FontSize.fourteen),
+    fontFamily: FontsFamilys.Poppins_SemiBold,
+    marginBottom: moderateScale(10),
+  },
+  sliderValue: {
+    textAlign: 'right',
+    color: Colors.light_black,
+    fontSize: moderateScale(12),
+  },
+  selectionBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#E8F9F1',
+    padding: moderateScale(12),
+    borderRadius: moderateScale(10),
+    marginBottom: moderateScale(20),
+  },
+  selectionText: {
+    fontFamily: FontsFamilys.Poppins_Medium,
+    color: 'green',
+    fontSize: moderateScale(14),
+  },
+  arrow: {
+    fontSize: moderateScale(18),
+    color: 'green',
+  },
+  applyButton: {
+    backgroundColor: '#FEB413',
+    borderRadius: moderateScale(30),
+    paddingVertical: moderateScale(15),
+    alignItems: 'center',
+    marginHorizontal: moderateScale(30),
+    marginTop: moderateScale(40),
+    borderWidth: 2,
+    borderColor: 'black',
+  },
+  applyText: {
+    fontFamily: FontsFamilys.Poppins_Regular,
+    color: '#000',
+    fontSize: moderateScale(14),
+  },
+  fourBoxcard: {
+    flex: 1,
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginTop: moderateScale(20),
+  },
+});
