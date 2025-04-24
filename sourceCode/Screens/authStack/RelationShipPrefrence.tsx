@@ -14,19 +14,39 @@ import {useNavigation} from '@react-navigation/native';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import Header from '../../components/Header';
 import {moderateScale} from '../../utils/responsive';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const RelationshipPreference = () => {
+const RelationshipPreference = ({ route }) => {
+    const { param} = route.params;
+
+    console.log(param,'========>>>>>>>>>>>',);
+    
+
   const navigation = useNavigation();
   const [selectedOption, setSelectedOption] = useState(null);
   const [error, setError] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedOption) {
       setError('Please select an option to continue');
       return;
     }
-    setError('');
-    navigation.navigate(ROUTE_NAMES.HobbyScreen);
+
+    try {
+      const userDetails = await AsyncStorage.getItem('userDetails');
+      const parsedDetails = userDetails ? JSON.parse(userDetails) : {};
+
+      parsedDetails.relationshipPreference = selectedOption;
+
+      await AsyncStorage.setItem('userDetails', JSON.stringify(parsedDetails));
+      setError('');
+      navigation.navigate(ROUTE_NAMES.HobbyScreen,{
+        param
+      });
+    } catch (err) {
+      console.error('Failed to save relationship preference:', err);
+      setError('Something went wrong. Please try again.');
+    }
   };
 
   const options = [

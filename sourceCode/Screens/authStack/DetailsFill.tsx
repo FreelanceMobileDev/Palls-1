@@ -1,4 +1,5 @@
 import {
+  Button,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -6,6 +7,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import React, {useRef, useState} from 'react';
@@ -19,12 +21,15 @@ import {useNavigation} from '@react-navigation/native';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import {moderateScale} from '../../utils/responsive';
 import CountryPicker from 'react-native-country-picker-modal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DatePicker from 'react-native-date-picker';
+import dayjs from 'dayjs';
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
-  age: Yup.number()
-    .typeError('Age must be a number')
-    .required('Age is required'),
+  age: Yup.date()
+    .required('Birth‑date is required')
+    .max(dayjs().subtract(18, 'year').toDate(), 'You must be at least 18'),
   location: Yup.string().required('Location is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
   contactNumber: Yup.string()
@@ -42,11 +47,36 @@ interface FormValues {
   contactNumber: string;
 }
 
-const DetailsFill = () => {
+const DetailsFill = ({route}) => {
+  const {param} = route.params;
+  console.log(param, 'param=======>');
   const navigation = useNavigation();
   const formikRef = useRef<FormikProps<FormValues>>(null);
   const [countryCode, setCountryCode] = useState('MY');
   const [country, setCountry] = useState(null);
+  const [date, setDate] = useState(new Date());
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const handleFormSubmit = async (values: FormValues) => {
+    console.log(values, '============>>>>>>>>>>>>>');
+
+    try {
+      const userData = {
+        ...values,
+        countryCode,
+        country,
+      };
+
+      await AsyncStorage.setItem('userDetails', JSON.stringify(userData));
+      console.log('User details stored:', userData);
+
+      navigation.navigate(ROUTE_NAMES.Gender, {
+        param,
+      });
+    } catch (error) {
+      console.error('Error storing user details:', error);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -73,11 +103,15 @@ const DetailsFill = () => {
                 contactNumber: '',
               }}
               validationSchema={validationSchema}
-              onSubmit={values => {
-                navigation.navigate(ROUTE_NAMES.Gender);
-                console.log(values);
-              }}>
-              {({handleChange, handleBlur, values, errors, touched}) => (
+              onSubmit={handleFormSubmit}>
+              {({
+                handleChange,
+                handleBlur,
+                values,
+                errors,
+                touched,
+                setFieldValue,
+              }) => (
                 <View style={styles.formContainer}>
                   <View style={styles.inputsContainer}>
                     <CustomTextInput
@@ -92,13 +126,11 @@ const DetailsFill = () => {
 
                     <CustomTextInput
                       placeholder={Texts.Age}
-                      keyboardType="numeric"
                       onChangeText={handleChange('age')}
                       onBlur={handleBlur('age')}
                       value={values.age}
-                      length={2}
                     />
-                    {touched.age && errors.age && (
+                    {touched.name && errors.age && (
                       <Text style={styles.errorText}>{errors.age}</Text>
                     )}
 
@@ -234,4 +266,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
+  dateInput: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 12,
+  },
+  placeholder: {color: '#999'},
 });

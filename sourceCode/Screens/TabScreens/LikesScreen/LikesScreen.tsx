@@ -2,6 +2,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -118,11 +119,16 @@ const LikesScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['#FEB413', '#F9F9F9']}
-        locations={[0, 0.3]}
-        style={styles.gradient}>
+    <LinearGradient
+      colors={['#FEB413', '#F9F9F9']}
+      locations={[0, 0.3]}
+      style={styles.gradient}>
+      <StatusBar
+        backgroundColor="#FEB413"
+        barStyle="dark-content"
+        translucent={false}
+      />
+      <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <Header
             leftIcon={ImageUrl.threelinesicon}
@@ -194,8 +200,8 @@ const LikesScreen = () => {
             />
           </View>
         </View>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -204,6 +210,7 @@ export default LikesScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   gradient: {
     flex: 1,

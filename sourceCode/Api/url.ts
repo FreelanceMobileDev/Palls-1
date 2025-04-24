@@ -12,5 +12,11 @@ export const AVAILABLE_DAYS = 'availableDays';
 export const CREATE_AVAILABLE_DAYS = 'availableDays/createAvailableDays';
 
 // Login
-export const LOGIN = 'api/phone';
-export const VERIFY_OTP = 'api/verifyOtp/';
+export const SEND_OTP = 'api/phone';
+export const VERIFY_OTP = 'api/verifyOtp';
+export const REGISTER_USER = 'api/register';
+export const CATEGORY = 'api/category/getCategoryList';
+export const SUB_CATEGORY = 'api/sub_category';
+export const CREATE_WORK = 'api/createWork';
+export const EDIT_JOB = '/api/editWork';
+export const GET_WORK = 'api/getWork'

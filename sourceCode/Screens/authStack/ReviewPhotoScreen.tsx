@@ -7,12 +7,17 @@ import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {PhotoFile} from 'react-native-vision-camera';
+import {imageUpload} from '../../Api/helper';
+import RNFS from 'react-native-fs';
 
-type ReviewPhotoScreenRouteProp = RouteProp<{
-  ReviewPhotoScreen: {
-    photo: PhotoFile | null;
-  };
-}, 'ReviewPhotoScreen'>;
+type ReviewPhotoScreenRouteProp = RouteProp<
+  {
+    ReviewPhotoScreen: {
+      photo: PhotoFile | null;
+    };
+  },
+  'ReviewPhotoScreen'
+>;
 
 type ReviewPhotoScreenProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -22,15 +27,37 @@ type ReviewPhotoScreenProps = {
 const ReviewPhotoScreen: React.FC<ReviewPhotoScreenProps> = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<ReviewPhotoScreenRouteProp>();
-  const { photo } = route.params;
+  const {photo} = route.params;
 
   const handleRetake = () => {
     navigation.goBack();
   };
 
-  const handleSubmit = () => {
-    // TODO: Implement photo submission logic
-    navigation.navigate(ROUTE_NAMES.DetailsFill);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleSubmit = async () => {
+    if (!photo || isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('files', {
+        uri: `file://${photo.path}`,
+        type: 'image/jpeg',
+        name: 'upload.jpg',
+      });
+
+      const response = await imageUpload(formData);
+      console.log('Upload success:', response.data.data.urls[0]);
+
+      navigation.navigate(ROUTE_NAMES.DetailsFill, {
+        param: response.data.data.urls[0],
+      });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,22 +66,18 @@ const ReviewPhotoScreen: React.FC<ReviewPhotoScreenProps> = () => {
 
       <View style={styles.imageBox}>
         {photo ? (
-          <Image 
-            source={{ uri: `file://${photo.path}` }} 
-            style={styles.image} 
-          />
+          <Image source={{uri: `file://${photo.path}`}} style={styles.image} />
         ) : (
           <View style={styles.placeholderImage} />
         )}
       </View>
 
       <View style={styles.buttonContainer}>
-        <OpacityButton 
-          button={styles.retakeButton} 
-          name={Texts.Retake} 
+        <OpacityButton
+          button={styles.retakeButton}
+          name={Texts.Retake}
           pressButton={handleRetake}
         />
-
         <OpacityButton
           button={{
             marginVertical: moderateScale(22),
@@ -71,8 +94,8 @@ const ReviewPhotoScreen: React.FC<ReviewPhotoScreenProps> = () => {
         please read our {''}
         {
           <TouchableOpacity
-            // onPress={() => navigation.navigate(ROUTE_NAMES.DetailsFill)}
-            >
+          // onPress={() => navigation.navigate(ROUTE_NAMES.DetailsFill)}
+          >
             <Text style={styles.linkText}>Privacy Policy.</Text>
           </TouchableOpacity>
         }

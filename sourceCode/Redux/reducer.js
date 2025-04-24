@@ -3,6 +3,7 @@ import {createSlice} from '@reduxjs/toolkit';
 
 const initialState = {
   loading: false,
+  images: null,
 };
 const sliceReducer = createSlice({
   name: 'counter',
@@ -11,8 +12,11 @@ const sliceReducer = createSlice({
     setLoading(state, action) {
       state.loading = action.payload;
     },
+    setImages(state, action) {
+      state.images = action.payload;
+    },
   },
 });
 
-export const {setLoading} = sliceReducer.actions;
+export const {setLoading, setImages} = sliceReducer.actions;
 export default sliceReducer.reducer;

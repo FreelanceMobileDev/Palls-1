@@ -6,7 +6,8 @@ import cookiesReducer from './cookiesReducer';
 import sliceReducer from './reducer'; 
 
 const rootReducer = combineReducers({
-  sliceReducer, 
+  
+  sliceReducer:sliceReducer, 
   cookies: cookiesReducer,
 });
 
@@ -18,13 +19,10 @@ const persistConfig = {
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-const store = configureStore({
+const Store = configureStore({
     reducer: persistedReducer,
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: false,
-        }),
+   
 });
 
-export const persistor = persistStore(store);
-export default store;
+export const persistor = persistStore(Store);
+export default Store;

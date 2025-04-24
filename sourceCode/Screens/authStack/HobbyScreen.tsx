@@ -6,7 +6,7 @@ import {
   View,
   ScrollView,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors, FontsFamilys, FontSize, ImageUrl, Texts} from '../../constant';
 import OpacityButton from '../../components/OpacityButton';
@@ -14,6 +14,10 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import Header from '../../components/Header';
 import {moderateScale} from '../../utils/responsive';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Category, SubCategory} from '../../Api/helper';
+import { useDispatch } from 'react-redux';
+import { setCategeroies } from '../../Redux/cookiesReducer';
 
 type HobbyScreenRouteParams = {
   isEditMode?: boolean;
@@ -24,25 +28,128 @@ type HobbyScreenRouteProp = RouteProp<
   'HobbyScreen'
 >;
 
-const HobbyScreen = () => {
+const HobbyScreen = ({route}) => {
+  const {param} = route.params;
+
   const navigation = useNavigation();
-  const route = useRoute<HobbyScreenRouteProp>();
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // const route = useRoute<HobbyScreenRouteProp>();
+  const [selectedTags, setSelectedTags] = useState<any>([]);
   const isEditMode = route.params?.isEditMode || false;
+  const [categoryList, setCategoryList] = useState<any[]>([]);
+  const [subCategoriesMap, setSubCategoriesMap] = useState<{
+    [key: string]: string[];
+  }>({});
+  const dispatch= useDispatch()
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const handleTagPress = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-      setSelectedTags(prev => prev.filter(t => t !== tag));
-    } else {
-      setSelectedTags(prev => [...prev, tag]);
-    }
+  useEffect(() => {
+    const fetchCategoryData = async () => {
+      try {
+        const categoryRes = await Category();
+          console.log(categoryRes,"categoryRes========>")
+        const categories = categoryRes?.data?.data?.response || [];
+        setCategoryList(categories);
+
+        const subCategoryPromises = categories.map(async category => {
+          const res = await SubCategory(category._id);
+          
+          const subData = res?.data?.data;
+          console.log(subData,"subCategoryPromises==============>")
+          const subTitles = Array.isArray(subData) ? subData.map(({ _id, title }) => ({ _id, title })) : [];
+            
+          console.log(subTitles,"subTitles=======>")
+          return {
+            categoryId: category._id,
+            subCategories: subTitles,
+          };
+        });
+
+        const subCategoryResults = await Promise.all(subCategoryPromises);
+
+        const map: {[key: string]: string[]} = {};
+
+        console.log(
+          subCategoryResults,
+          'subCategoryResultssubCategoryResults===>>',
+        );
+
+        subCategoryResults.forEach(({categoryId, subCategories}) => {
+          console.log(categoryId,'categoryIdcategoryId===>',subCategories);
+          
+          map[categoryId] = subCategories;
+        });
+
+        console.log('Final subCategoriesMap:', map);
+        setSubCategoriesMap(map);
+      } catch (error) {
+        console.error('Error fetching categories or subcategories:', error);
+      }
+      setIsLoading(false);
+    };
+
+    fetchCategoryData();
+  }, []);
+
+  // const handleTagPress = (tag: string, id: any) => {
+  //   console.log(id,'>>>>>>>>>======',tag);
+    
+  //   if (selectedTags.includes(tag?._id)) {
+  //     setSelectedTags(prev => prev.filter(t => t !== tag?._id));
+  //   } else {
+  //     setSelectedTags(prev => [
+  //       ...prev,
+  //       {category_Id: id, Sub_Category_Id: tag?._id},
+  //     ]);
+  //   }
+  // };
+  const handleTagPress = (tag: any, categoryId: string) => {
+    console.log(categoryId, '>>>>>>>>>======', tag);
+  
+    setSelectedTags(prevSelected => {
+      // Check if category already exists
+      const existingCategoryIndex = prevSelected.findIndex(item => item.category_Id === categoryId);
+  
+      if (existingCategoryIndex > -1) {
+        const updated = [...prevSelected];
+        const subCategoryArray = updated[existingCategoryIndex].Sub_Category_Id;
+  
+        if (subCategoryArray.includes(tag._id)) {
+          // Remove subcategory
+          updated[existingCategoryIndex].Sub_Category_Id = subCategoryArray.filter(id => id !== tag._id);
+  
+          // Remove the category if no subcategories are left
+          if (updated[existingCategoryIndex].Sub_Category_Id.length === 0) {
+            updated.splice(existingCategoryIndex, 1);
+          }
+  
+          return updated;
+        } else {
+          // Add new subcategory
+          updated[existingCategoryIndex].Sub_Category_Id.push(tag._id);
+          return updated;
+        }
+      } else {
+        // Add new category with the subcategory
+        return [
+          ...prevSelected,
+          { category_Id: categoryId, Sub_Category_Id: [tag._id] }
+        ];
+      }
+    });
   };
+  
 
-  const renderTags = (tags: string[], isSelection = true) => {
+  console.log(selectedTags, 'selectedTags========>');
+
+  const renderTags = (setSubCategoryList: any, id:any, isSelection = true) => {
     return (
       <View style={styles.tagContainer}>
-        {tags.map(tag => {
-          const isSelected = selectedTags.includes(tag);
+        {setSubCategoryList?.map(tag => {
+           console.log(tag,'tag========>')
+          const isSelected = selectedTags.some(item =>
+            item?.Sub_Category_Id.includes(tag?._id)
+          );
+         
           const isSelectedTag = isSelection && isSelected;
           const baseStyle = isSelection
             ? [styles.tag, isSelectedTag && styles.tagSelected]
@@ -55,9 +162,9 @@ const HobbyScreen = () => {
             <TouchableOpacity
               key={tag}
               style={baseStyle}
-              onPress={() => handleTagPress(tag)}
+              onPress={() => handleTagPress(tag, id)}
               activeOpacity={0.7}>
-              <Text style={textStyle}>{tag}</Text>
+              <Text style={textStyle}>{tag?.title}</Text>
               {isSelectedTag || !isSelection ? (
                 <Text style={styles.tagClose}>✕</Text>
               ) : null}
@@ -66,6 +173,43 @@ const HobbyScreen = () => {
         })}
       </View>
     );
+  };
+
+  const saveHobbiesToStorage = async () => {
+    try {
+      const userDetails = await AsyncStorage.getItem('userDetails');
+      const parsedDetails = userDetails ? JSON.parse(userDetails) : {};
+
+      const selectedWithCategory: {categoryId: string; subcategory: string}[] =
+        [];
+
+      // Map selected subcategories to their categoryId
+      for (const [categoryId, subcategories] of Object.entries(
+        subCategoriesMap,
+      )) {
+        subcategories.forEach(sub => {
+          if (selectedTags.includes(sub)) {
+            selectedWithCategory.push({
+              categoryId,
+              subcategory: sub,
+            });
+          }
+        });
+      }
+
+      parsedDetails.hobbies = selectedWithCategory;
+
+     
+      dispatch(setCategeroies(selectedTags))
+      
+
+      await AsyncStorage.setItem('userDetails', JSON.stringify(parsedDetails));
+      navigation.navigate(ROUTE_NAMES.BioScreen, {
+        param,
+      });
+    } catch (error) {
+      console.error('Failed to save hobbies:', error);
+    }
   };
 
   return (
@@ -95,62 +239,40 @@ const HobbyScreen = () => {
           )}
 
           {/* Selected Tags */}
-          {selectedTags.length > 0 && (
+          {/* {selectedTags.length > 0 && (
             <View style={styles.selectedTagsContainer}>
               {renderTags(selectedTags)}
               <View style={styles.divider} />
             </View>
-          )}
+          )} */}
 
           {/* Tag Categories */}
-          <View
-            style={[
-              styles.categoriesContainer,
-              isEditMode && {marginTop: moderateScale(35)},
-            ]}>
-            <Text style={styles.categoryTitle}>
-              {Texts.Entertainment_Leisure}
-            </Text>
-            {renderTags([
-              'Movie Night',
-              'Concerts & Live Shows',
-              'Game Night',
-              'Escape Room',
-              'Karaoke Night',
-            ])}
-
-            <Text style={styles.categoryTitle}>{Texts.Outdoor_Adventure}</Text>
-            {renderTags([
-              'Horse Riding',
-              'Hiking & Nature Walks',
-              'Cycling',
-              'Beach or Pool Day',
-              'Amusement Parks & Arcades',
-            ])}
-
-            <Text style={styles.categoryTitle}>{Texts.Food_Experiences}</Text>
-            {renderTags([
-              'Cooking or Baking',
-              'Food Tour',
-              'Coffee',
-              'Picnic',
-              'Themed Dinner Nights',
-            ])}
-
-            <Text style={styles.categoryTitle}>
-              {Texts.Learning_Creativity}
-            </Text>
-            {renderTags(['Museum or Art Gallery', 'Painting or Pottery Class'])}
-          </View>
+          {categoryList?.length > 0 && (
+            <View
+              style={[
+                styles.categoriesContainer,
+                isEditMode && {marginTop: moderateScale(35)},
+              ]}>
+              {categoryList.map(category => {
+                 console.log(subCategoriesMap,"subCategoriesMap========>")
+                const subCategoryTitles = subCategoriesMap[category._id] || [];
+                console.log(subCategoryTitles, 'kjnjklnkljnkjlnlkjnk======>');
+                return (
+                  <View key={category._id}>
+                    <Text style={styles.categoryTitle}>{category.title}</Text>
+                    {renderTags(subCategoryTitles, category?._id)}
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
 
-        {/* Bottom Button */}
-        <View style={styles.bottomButton}>
-          <OpacityButton
-            name="Next"
-            pressButton={() => navigation.navigate(ROUTE_NAMES.BioScreen)}
-          />
-        </View>
+        {!isLoading && (
+          <View style={styles.bottomButton}>
+            <OpacityButton name="Next" pressButton={saveHobbiesToStorage} />
+          </View>
+        )}
       </View>
     </LinearGradient>
   );

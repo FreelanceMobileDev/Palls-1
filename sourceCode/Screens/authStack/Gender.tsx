@@ -7,19 +7,36 @@ import {StyleSheet, Text, View, Image, TouchableOpacity} from 'react-native';
 import Header from '../../components/Header';
 import OpacityButton from '../../components/OpacityButton';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Gender = () => {
+const Gender = ({route}) => {
+  const {param} = route.params;
+  console.log(param, 'param from DetailsFill');
   const navigation = useNavigation();
   const [selectedGender, setSelectedGender] = useState(null);
   const [error, setError] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedGender) {
       setError('Please select a gender to continue');
       return;
     }
-    setError('');
-    navigation.navigate(ROUTE_NAMES.UploadPicture);
+    try {
+      const userDetails = await AsyncStorage.getItem('userDetails');
+      let updatedDetails = userDetails ? JSON.parse(userDetails) : {};
+
+      updatedDetails.gender = selectedGender; // Add gender as a string
+
+      await AsyncStorage.setItem('userDetails', JSON.stringify(updatedDetails));
+      console.log('Gender updated:', updatedDetails);
+
+      setError('');
+      navigation.navigate(ROUTE_NAMES.UploadPicture, {
+        param,
+      });
+    } catch (error) {
+      console.error('Error updating user details:', error);
+    }
   };
 
   const renderGenderOption = label => {

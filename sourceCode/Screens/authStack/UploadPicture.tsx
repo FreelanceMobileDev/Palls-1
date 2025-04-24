@@ -17,15 +17,23 @@ import {
 import Header from '../../components/Header';
 import OpacityButton from '../../components/OpacityButton';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
-import {launchImageLibrary} from 'react-native-image-picker';
+import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {imageUpload} from '../../Api/helper';
+import {useDispatch} from 'react-redux';
+import {setImages} from '../../Redux/cookiesReducer';
 
-const UploadPicture = () => {
-  const navigation = useNavigation();
+const UploadPicture = ({route}) => {
+  const {param} = route.params;
+  console.log(param, 'param from DetailsFill=========>>>>>>');
+  const navigation = useNavigation<any>();
   const [error, setError] = useState('');
+
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<{[key: number]: string}>(
     {},
   );
-
+  const dispatch = useDispatch();
   const requestStoragePermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -53,100 +61,137 @@ const UploadPicture = () => {
     return true;
   };
 
-  const handleImagePick = async (key: number) => {
-    try {
-      console.log('Starting image pick process...');
+  const handleImagePick = async () => {
+    const hasPermission = await requestStoragePermission();
 
-      const hasPermission = await requestStoragePermission();
-      console.log('Permission status:', hasPermission);
-
-      if (!hasPermission) {
-        Alert.alert(
-          'Permission Required',
-          'Please grant storage permission to select images',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Open Settings',
-              onPress: () => {
-                if (Platform.OS === 'android') {
-                  Linking.openSettings();
-                }
-              },
-            },
-          ],
-        );
-        return;
-      }
-
-      console.log('Launching image library...');
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        quality: 1,
-      });
-
-      console.log('Image picker result:', result);
-
-      if (result.didCancel) {
-        console.log('User cancelled image picker');
-        return;
-      }
-
-      if (result.errorCode) {
-        console.log('ImagePicker Error Code:', result.errorCode);
-        console.log('ImagePicker Error Message:', result.errorMessage);
-        setError(`Failed to pick image: ${result.errorMessage}`);
-        return;
-      }
-
-      if (!result.assets || result.assets.length === 0) {
-        console.log('No assets in result');
-        setError('No image was selected');
-        return;
-      }
-
-      const selectedImage = result.assets[0];
-      console.log('Selected image details:', {
-        uri: selectedImage.uri,
-        type: selectedImage.type,
-        width: selectedImage.width,
-        height: selectedImage.height,
-      });
-
-      if (!selectedImage.uri) {
-        console.log('Selected image has no URI');
-        setError('Selected image has no URI');
-        return;
-      }
-
-      setSelectedImages(prev => {
-        const newImages = {...prev};
-        newImages[key] = selectedImage.uri!;
-        return newImages;
-      });
-      setError('');
-    } catch (err) {
-      console.error('Image picker error:', err);
-      setError('Failed to pick image. Please try again.');
-    }
-  };
-
-  const handleSubmit = () => {
-    if (Object.keys(selectedImages).length === 0) {
-      setError('Please select at least one photo');
+    if (!hasPermission) {
+      Alert.alert(
+        'Permission Required',
+        'Please grant storage permission to select or take a photo.',
+        [
+          {text: 'Cancel', style: 'cancel'},
+          {
+            text: 'Open Settings',
+            onPress: () => Linking.openSettings(),
+          },
+        ],
+      );
       return;
     }
-    navigation.navigate(ROUTE_NAMES.RelationShipPrefrence as never);
+
+    Alert.alert(
+      'Upload Photo',
+      'Choose a method',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            const result = await launchCamera({
+              mediaType: 'photo',
+              cameraType: 'back',
+              quality: 1,
+            });
+
+            handleImageResult(result);
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: async () => {
+            const result = await launchImageLibrary({
+              mediaType: 'photo',
+              quality: 1,
+            });
+
+            handleImageResult(result);
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      {cancelable: true},
+    );
+
+    // console.log('====>>>test')
+  };
+
+  const handleImageResult = result => {
+    if (result.didCancel || !result.assets || result.assets.length === 0) {
+      return;
+    }
+
+    const selectedImage = result.assets[0];
+    if (!selectedImage.uri) {
+      setError('No image selected or invalid file.');
+      return;
+    }
+
+    setSelectedImages(prev => {
+      const newImages = {...prev};
+      const usedKeys = Object.keys(newImages).map(k => parseInt(k));
+      let nextKey = 0;
+
+      while (usedKeys.includes(nextKey) && newImages[nextKey]) {
+        nextKey++;
+      }
+
+      if (nextKey >= 6) {
+        setError('Maximum of 6 images allowed.');
+        return prev;
+      }
+
+      newImages[nextKey] = selectedImage.uri;
+
+      return newImages;
+    });
+
+    setError('');
+  };
+
+  const handleSubmit = async () => {
+    const selectedURIs = Object.values(selectedImages).filter(uri => uri);
+    if (selectedURIs.length < 2) {
+      setError('Please select at least two photos');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const formData = new FormData();
+      selectedURIs.forEach((image, index) => {
+        formData.append('files', {
+          uri: image,
+          type: image.type || 'image/jpeg',
+          name: image.name || `image_${index}.jpg`,
+        });
+      });
+      const response = await imageUpload(formData);
+      console.log(response, 'response======>');
+      const resUrls = response?.data?.data?.urls;
+      console.log(resUrls, 'resUrls=====>');
+      dispatch(setImages(resUrls));
+
+      setIsLoading(false);
+      navigation.navigate('RelationShipPrefrence', {
+        single: param,
+        multi: resUrls,
+      });
+    } catch (err) {
+      setIsLoading(false);
+      // setError('Failed to upload images. Please try again.');
+    }
   };
 
   const renderPhotoBox = (key: number, isLarge = false) => (
     <TouchableOpacity
       key={key}
       style={[styles.photoBox, isLarge && styles.largeBox]}
-      onPress={() => handleImagePick(key)}>
+      onPress={handleImagePick}>
+      {' '}
+      {/* ← No need for key here anymore */}
       {selectedImages[key] ? (
         <Image
           source={{uri: selectedImages[key]}}
@@ -197,7 +242,11 @@ const UploadPicture = () => {
 
       {/* Bottom button */}
       <View style={styles.bottomButton}>
-        <OpacityButton name={Texts.Next} pressButton={handleSubmit} />
+        <OpacityButton
+          name={Texts.Next}
+          loading={isLoading}
+          pressButton={handleSubmit}
+        />
       </View>
     </LinearGradient>
   );

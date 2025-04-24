@@ -12,6 +12,8 @@ import {Camera, useCameraDevice} from 'react-native-vision-camera';
 import {Colors, FontsFamilys, FontSize, ImageUrl, Texts} from '../../constant';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNFS from 'react-native-fs';
 
 type VerifyHumanProps = {
   navigation: NativeStackNavigationProp<any>;
@@ -38,6 +40,13 @@ const VerifyHuman: React.FC<VerifyHumanProps> = ({navigation}) => {
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePhoto();
+      const base64Image = await RNFS.readFile(photo.path, 'base64');
+      try {
+        await AsyncStorage.setItem('selfiePhoto', base64Image);
+        console.log('Photo saved to AsyncStorage');
+      } catch (error) {
+        console.error('Error saving photo:', error);
+      }
       navigation.navigate(ROUTE_NAMES.ReviewPhotoScreen, {photo});
     }
   };
@@ -68,7 +77,7 @@ const VerifyHuman: React.FC<VerifyHumanProps> = ({navigation}) => {
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() =>
-          navigation.navigate(ROUTE_NAMES.ReviewPhotoScreen, {photo: null})
+          navigation.navigate(ROUTE_NAMES.DetailsFill, {photo: null})
         }>
         <Text style={styles.skipText}>{Texts.Skip_for_now}</Text>
       </TouchableOpacity>

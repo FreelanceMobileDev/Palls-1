@@ -19,8 +19,10 @@ import {Formik} from 'formik';
 import * as Yup from 'yup';
 import OpacityButton from '../../components/OpacityButton';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Login} from '../../Api/helper';
+import {sendOtp} from '../../Api/helper';
 import CountryPicker from 'react-native-country-picker-modal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { setIsloading } from '../../Redux/reducer';
 
 const validationSchema = Yup.object().shape({
   contactNumber: Yup.string()
@@ -34,26 +36,47 @@ const EnterPhoneNumber = () => {
   const navigation = useNavigation();
   const [countryCode, setCountryCode] = useState('MY');
   const [country, setCountry] = useState(null);
+  const [isLoading, setIsloading] = useState(false);
 
   const handlePhoneSubmit = async (values: any) => {
     try {
       const payload = {phone: values.contactNumber};
-      const response = await Login(payload);
+      setIsloading(true);
+      const response = await sendOtp(payload);
       console.log('Login API response:', response?.data);
+      const userId = response?.data?.data?.response?._id;
+      console.log('User ID:', userId);
+      await storeApiResponse(response);
 
       if (response?.data?.status) {
-        // ✅ API success, navigate
+        setIsloading(false);
         navigation.navigate('OTPScreen', {
           phone: values.contactNumber,
         });
       } else {
-        alert(
-          response?.data?.message || 'Something went wrong. Please try again.',
-        );
+        setIsloading(false);
+        // alert(
+        //   response?.data?.message || 'Something went wrong. Please try again.',
+        // );
       }
     } catch (error) {
+      setIsloading(false);
       console.error('Login API error:', error);
-      alert('Something went wrong. Please try again.');
+      // alert('Something went wrong. Please try again.');
+    }
+  };
+
+  const storeApiResponse = async response => {
+    try {
+      const fullData = response?.data?.data?.response;
+      console.log(fullData, 'sjhfgvswjrgfuwg');
+
+      if (fullData) {
+        await AsyncStorage.setItem('userData', JSON.stringify(fullData));
+        console.log('User data saved to AsyncStorage');
+      }
+    } catch (error) {
+      console.error('Error saving user data:', error);
     }
   };
 
@@ -139,6 +162,7 @@ const EnterPhoneNumber = () => {
                         name={Texts.Next}
                         pressButton={handleSubmit}
                         button={styles.bottomButton}
+                        loading={isLoading}
                       />
                     </View>
                   )}

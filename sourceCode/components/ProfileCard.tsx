@@ -59,7 +59,7 @@ export default ProfileCard;
 
 const styles = StyleSheet.create({
   card: {
-    height: '82%',
+    height: '78%',
     width: '89%',
     borderRadius: moderateScale(20),
     bottom: moderateScale(50),

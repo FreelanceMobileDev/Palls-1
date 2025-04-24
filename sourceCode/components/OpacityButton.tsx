@@ -1,14 +1,15 @@
-import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator} from 'react-native';
 import React from 'react';
 import {Colors, FontSize} from '../constant';
 
 const OpacityButton = (props: any) => {
-  const {img1} = props;
+  const {img1, loading} = props;
+
   return (
     <TouchableOpacity
-      style={[styles.container, props.button,{justifyContent:!img1 ? 'center':'space-between'}]}
+      style={[styles.container, props.button, {justifyContent: !img1 ? 'center' : 'space-between'}]}
       onPress={props.pressButton}
-      disabled={props.disabled}>
+      disabled={props.disabled || loading}>
       {img1 && (
         <View style={styles.imageBackground}>
           <Image
@@ -18,11 +19,16 @@ const OpacityButton = (props: any) => {
           />
         </View>
       )}
-      <Text style={[styles.myText, props.btnTextStyle]}>{props.name}</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color={props.loaderColor || '#fff'} />
+      ) : (
+        <Text style={[styles.myText, props.btnTextStyle]}>{props.name}</Text>
+      )}
       <View />
     </TouchableOpacity>
   );
 };
+
 export default OpacityButton;
 const styles = StyleSheet.create({
   container: {
@@ -52,4 +58,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     textAlign: 'center',
   },
+  
 });

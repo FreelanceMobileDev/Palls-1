@@ -18,20 +18,96 @@ import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {moderateScale} from '../../utils/responsive';
 import {useRoute} from '@react-navigation/native';
-import {Login, VerifyOtp} from '../../Api/helper';
+import {Login, sendOtp, VerifyOtp} from '../../Api/helper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {ShowToast} from '../../Api/ToastService';
 
 const OTPScreen = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const inputsRef = useRef([]);
   const navigation = useNavigation();
   const hasStarted = useRef(false);
+  const [showOtp, setShowOtp] = useState('');
   const route = useRoute();
   const {phone} = route.params || {};
+  const [isloding, setIsloading] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
       inputsRef.current[0]?.focus();
     }, 10);
+  }, []);
+
+  const handleResendOtp = async () => {
+    if (!phone) {
+      ShowToast('Phone number is missing');
+      return;
+    }
+    try {
+      setIsloading(true);
+      const payload = {phone};
+      const response = await sendOtp(payload);
+      console.log('Resend OTP API response:', response?.data);
+
+      if (response?.data?.status) {
+        const newOtp = response?.data?.data?.response?.otp?.toString();
+        if (newOtp) {
+          setShowOtp(newOtp);
+          if (newOtp.length === 4) {
+            setOtp(newOtp.split(''));
+          }
+
+          // Store updated user data
+          const storedUserData = await AsyncStorage.getItem('userData');
+          const userData = storedUserData ? JSON.parse(storedUserData) : {};
+          const updatedUser = {
+            ...userData,
+            otp: newOtp,
+            _id: response?.data?.data?.response?._id || userData._id,
+          };
+          await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+        }
+
+        ShowToast('OTP sent successfully');
+      } else {
+        ShowToast(response?.data?.message || 'Failed to resend OTP');
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      ShowToast('Something went wrong. Please try again.');
+    } finally {
+      setIsloading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const jsonValue = await AsyncStorage.getItem('userData');
+        if (jsonValue) {
+          const userData = JSON.parse(jsonValue);
+          console.log('User Data from AsyncStorage:', userData);
+          console.log('User ID:', userData?._id);
+          // setUserId(userData?._id);
+
+          // 👇 Set OTP if available
+          if (userData?.otp) {
+            const otpStr = userData.otp.toString();
+            setShowOtp(otpStr);
+
+            if (otpStr.length === 4) {
+              setOtp(otpStr.split(''));
+            }
+          }
+          // Access userId here
+          // You can use userData._id or any other fields as needed
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data from AsyncStorage:', error);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   const handleVerifyOTP = async () => {
@@ -42,24 +118,42 @@ const OTPScreen = () => {
       return;
     }
 
-    const payload = {
-      phone: phone,
-      otp: otpCode,
-    };
-
     try {
-      const response = await VerifyOtp(payload); // ✅ correct API now
+      const storedUserData = await AsyncStorage.getItem('userData');
+      const userData = storedUserData ? JSON.parse(storedUserData) : null;
+      const userId = userData?._id;
+      // console.log(userData,'wfrferfreferfe',userData?._id);
+
+      if (!userId) {
+        console.log('wfrferfreferfe', userData?._id);
+        alert('User ID missing. Please try logging in again.');
+        return;
+      }
+
+      const payload = {
+        // phone: phone,
+        otp: otpCode,
+        id: userId,
+      };
+
+      setIsloading(true);
+      const response = await VerifyOtp(payload);
 
       console.log('OTP Verified:', response?.data);
 
       if (response?.data?.status) {
+        setIsloading(false);
+        ShowToast(response?.data?.message);
         navigation.navigate(ROUTE_NAMES.VerifyHuman);
       } else {
+        setIsloading(false);
         alert(response?.data?.message || 'OTP verification failed');
       }
-    } catch (error) {
-      console.error('OTP Verify Error:', error);
-      alert('Something went wrong. Please try again.');
+    } catch (error: any) {
+      setIsloading(false);
+      ShowToast(error.message);
+      // console.error('OTP Verify Error:', error);
+      // alert('Something went wrong. Please try again.');
     }
   };
 
@@ -124,6 +218,7 @@ const OTPScreen = () => {
                 {Texts.We_sent_OTP_email},{'\n'}
                 random3321@gmail.com
               </Text>
+              <Text style={{color: '#000', marginTop: 10}}>OTP: {showOtp}</Text>
               <View style={styles.otpContainer}>
                 {otp.map((digit, index) => (
                   <TextInput
@@ -140,15 +235,18 @@ const OTPScreen = () => {
 
               <Text style={styles.resendText}>
                 {Texts.Didnt_receive_code}{' '}
-                <Text style={styles.resendLink}>{Texts.Resend}</Text>
+                <Text style={styles.resendLink} onPress={handleResendOtp}>
+                  {Texts.Resend}
+                </Text>
               </Text>
 
               <OpacityButton
                 button={{marginVertical: 22, width: '76%'}}
                 name={Texts.Verify}
+                loading={isloding}
                 pressButton={
-                  // handleVerifyOTP
-                  () => navigation.navigate(ROUTE_NAMES.VerifyHuman)
+                  handleVerifyOTP
+                  // () => navigation.navigate(ROUTE_NAMES.VerifyHuman)
                 }
               />
 

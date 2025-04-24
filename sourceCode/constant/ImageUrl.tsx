@@ -62,5 +62,7 @@ const ImageUrl = {
   Archery: require('../assets/Images/archery.png'),
   Check: require('../assets/Images/check.png'),
   LightStar: require('../assets/Images/ligjhtStar.png'),
+  Delete: require('../assets/Images/delete.png'),
+  Edit: require('../assets/Images/edit.png'),
 };
 export default ImageUrl;

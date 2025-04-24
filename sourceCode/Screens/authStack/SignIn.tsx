@@ -41,9 +41,7 @@ const SignIn = () => {
         {Texts.Dont_have_account}{' '}
         <Text
           style={styles.signupLink}
-          // onPress={() => navigation.navigate(ROUTE_NAMES.SignUp)}
-          onPress={() => navigation.navigate(ROUTE_NAMES.TabNavigation)}
-          // navigation.navigate(ROUTE_NAMES.TabNavigation);
+          onPress={() => navigation.navigate(ROUTE_NAMES.SignUp)}
         >
           {Texts.Sign_Up}
         </Text>

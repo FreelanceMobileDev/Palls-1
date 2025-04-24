@@ -13,7 +13,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: moderateScale(20),
-    marginTop:moderateScale(20)
   },
   iconButton: {
     width: moderateScale(40),
@@ -40,7 +39,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   button: {
-    width: '40%',
+    width: '50%',
     alignSelf: 'center',
     borderColor: '#FEB413',
     backgroundColor: '#FDC93A',

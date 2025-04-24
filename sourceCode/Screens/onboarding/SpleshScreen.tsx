@@ -1,12 +1,9 @@
 import {
-  View,
   StyleSheet,
-  Dimensions,
   Image,
   StatusBar,
 } from 'react-native';
 import React from 'react';
-import {useTheme} from '../../utils/ThemeProvider';
 import LinearGradient from 'react-native-linear-gradient';
 import { ImageUrl } from '../../constant';
 import { useNavigation } from '@react-navigation/native';
@@ -14,8 +11,7 @@ import { ROUTE_NAMES } from '../../navigation/StackNavigation';
 
 const SpleshScreen = () => {
   const navigation = useNavigation();
-  const theme = useTheme();
-  const {width, height} = Dimensions.get('window');
+
 
   setTimeout(() => {
     navigation.replace(ROUTE_NAMES.SignIn);
@@ -48,6 +44,6 @@ const styles = StyleSheet.create({
   logo: {
     width: '90%',  // Responsive image
     height: undefined,
-    aspectRatio: 2, 
+    aspectRatio: 2
   },
 });

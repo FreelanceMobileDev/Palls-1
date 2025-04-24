@@ -219,8 +219,7 @@ const HomeScreen = () => {
             />
           </View>
         ) : showProfile ? (
-          <View
-            style={styles.fourBoxcard}>
+          <View style={styles.fourBoxcard}>
             <ProfileCard
               image={ImageUrl.GirlImage}
               name={'Atylia, 32'}

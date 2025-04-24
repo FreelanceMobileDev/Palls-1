@@ -1,6 +1,8 @@
 import {createSlice} from '@reduxjs/toolkit';
 const initialState = {
   logindata:{},
+  images :null,
+  categeroies:null
 
 };
 
@@ -11,8 +13,15 @@ const cookies = createSlice({
     setLoginData(state, action) {
       state.logindata = action.payload;
     },
+    setImages(state, action) {
+      state.images = action.payload;
+    },
+    setCategeroies(state, action) {
+      state.categeroies = action.payload;
+    },
+
   },
 });
 
-export const {setLoginData,} = cookies.actions;
+export const {setLoginData,  setImages,setCategeroies} = cookies.actions;
 export default cookies.reducer;

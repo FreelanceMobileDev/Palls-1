@@ -1,13 +1,11 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import SpleshScreen from '../Screens/onboarding/SpleshScreen';
-import {Text, View} from 'react-native';
 import SignIn from '../Screens/authStack/SignIn';
 import SignUp from '../Screens/authStack/SignUp';
 import OTPScreen from '../Screens/authStack/OTPScreen';
 import VerifyHuman from '../Screens/authStack/VerifyHuman';
 import DetailsFill from '../Screens/authStack/DetailsFill';
-import TabNavigation from './TabNavigation';
 import EnterPhoneNumber from '../Screens/authStack/EnterPhoneNumber';
 import Gender from '../Screens/authStack/Gender';
 import UploadPicture from '../Screens/authStack/UploadPicture';
@@ -26,14 +24,16 @@ import Setting from '../Screens/TabScreens/ProfileScreen/Setting';
 import Subscription from '../Screens/TabScreens/ProfileScreen/Subscription';
 import ProfileScreen from '../Screens/TabScreens/ProfileScreen/ProfileScreen';
 import ContactUs from '../Screens/TabScreens/ProfileScreen/Contact_Us';
+import AddWork from '../Screens/authStack/Addwork/AddWork';
+import WorkAdding from '../Screens/authStack/WorkAdding/WorkAdding';
 
 const Stack = createNativeStackNavigator();
 
 const StackNavigation = () => {
   return (
     <Stack.Navigator
-      // initialRouteName={ROUTE_NAMES.SplashScreen}
-      initialRouteName={ROUTE_NAMES.TabNavigation}
+      initialRouteName={ROUTE_NAMES.SplashScreen}
+      // initialRouteName={ROUTE_NAMES.AddWork}
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
@@ -49,6 +49,7 @@ const StackNavigation = () => {
         name={ROUTE_NAMES.ReviewPhotoScreen}
         component={ReviewPhotoScreen}
       />
+      {/* <Stack.Screen name={ROUTE_NAMES.Add} */}
       <Stack.Screen name={ROUTE_NAMES.BioScreen} component={BioScreen} />
       <Stack.Screen name={ROUTE_NAMES.HobbyScreen} component={HobbyScreen} />
       <Stack.Screen
@@ -64,6 +65,7 @@ const StackNavigation = () => {
       <Stack.Screen name={ROUTE_NAMES.OTPScreen} component={OTPScreen} />
       <Stack.Screen name={ROUTE_NAMES.VerifyHuman} component={VerifyHuman} />
       <Stack.Screen name={ROUTE_NAMES.DetailsFill} component={DetailsFill} />
+      <Stack.Screen name={ROUTE_NAMES.WorkAdding} component={WorkAdding} />
       <Stack.Screen
         name={ROUTE_NAMES.EventDetailsScreen}
         component={EventDetailsScreen}
@@ -72,6 +74,7 @@ const StackNavigation = () => {
         name={ROUTE_NAMES.ProfileDetailsScreen}
         component={ProfileDetailScreen}
       />
+      <Stack.Screen name={ROUTE_NAMES.AddWork} component={AddWork} />
       <Stack.Screen name={ROUTE_NAMES.CheckIn} component={CheckIn} />
       <Stack.Screen name={ROUTE_NAMES.Checkout} component={Checkout} />
       <Stack.Screen name={ROUTE_NAMES.EditScreen} component={EditScreen} />
@@ -82,7 +85,10 @@ const StackNavigation = () => {
         name={ROUTE_NAMES.TabNavigation}
         component={DrawerNavigator}
       />
-      <Stack.Screen name={ROUTE_NAMES.ProfileScreen} component={ProfileScreen} />
+      <Stack.Screen
+        name={ROUTE_NAMES.ProfileScreen}
+        component={ProfileScreen}
+      />
       <Stack.Screen name={ROUTE_NAMES.ContactUs} component={ContactUs} />
     </Stack.Navigator>
   );
@@ -115,4 +121,6 @@ export const ROUTE_NAMES = {
   Subscription: 'Subscription',
   ProfileScreen: 'ProfileScreen',
   ContactUs: 'ContactUs',
+  AddWork: 'AddWork',
+  WorkAdding: 'WorkAdding',
 };
