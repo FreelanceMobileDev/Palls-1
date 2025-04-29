@@ -11,7 +11,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {moderateScale, scale, verticalScale} from '../../../utils/responsive';
 import {Colors, FontsFamilys, ImageUrl} from '../../../constant';
 import Header from '../../../components/Header';
-import {useNavigation} from '@react-navigation/native';
+import {DrawerActions, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import * as Progress from 'react-native-progress';
 import {ROUTE_NAMES} from '../../../navigation/StackNavigation';
@@ -36,8 +36,8 @@ const ProfileScreen = () => {
         style={[styles.gradientContainer, {flex: 0.4}]}>
         {/* Header */}
         <Header
-          leftIcon={ImageUrl.BackIcon}
-          onPressLeftImg={() => navigation.navigate('EditScreen')}
+          leftIcon={ImageUrl.threelinesicon}
+          onPressLeftImg={()=>navigation.dispatch(DrawerActions.openDrawer())}
           leftIconStyle={{
             width: moderateScale(45),
             height: moderateScale(45),

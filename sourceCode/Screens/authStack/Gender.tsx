@@ -76,7 +76,7 @@ const Gender = ({route}) => {
         leftIcon={ImageUrl.BackIcon}
         onPressLeftImg={() => navigation.goBack()}
         containerstyle={{
-          marginTop: moderateScale(48),
+          marginTop: moderateScale(28),
           marginLeft: moderateScale(22),
         }}
       />

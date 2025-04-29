@@ -22,30 +22,15 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F3F3F3',
     borderRadius: 30,
-    paddingVertical: verticalScale(12),
-    paddingHorizontal: moderateScale(16),
+    paddingVertical: verticalScale(15),
+    paddingHorizontal: moderateScale(25),
     marginBottom: verticalScale(12),
-  },
-  radioCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: '#4CD964',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: moderateScale(12),
-  },
-  radioSelected: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CD964',
   },
   jobText: {
     flex: 1,
     fontSize: moderateScale(14),
     color: '#333',
+    marginLeft: moderateScale(10),
   },
   iconButton: {
     paddingHorizontal: moderateScale(6),
@@ -62,9 +47,9 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: moderateScale(14),
     color: '#333',
+    marginLeft: moderateScale(16),
   },
   saveText: {
-    fontWeight: '600',
     fontSize: moderateScale(14),
   },
   bottomButtonContainer: {
@@ -93,6 +78,4 @@ export const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: '#555',
   },
-  
-  
 });

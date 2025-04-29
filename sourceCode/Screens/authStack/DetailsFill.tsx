@@ -1,13 +1,16 @@
 import {
+  Alert,
   Button,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import React, {useRef, useState} from 'react';
@@ -23,13 +26,22 @@ import {moderateScale} from '../../utils/responsive';
 import CountryPicker from 'react-native-country-picker-modal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-native-date-picker';
-import dayjs from 'dayjs';
+import {ShowToast} from '../../Api/ToastService';
+import MapView, {Marker} from 'react-native-maps';
+import Geocoder from 'react-native-geocoding';
+import {FlatList, TextInput} from 'react-native-gesture-handler';
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
-  age: Yup.date()
-    .required('Birth‑date is required')
-    .max(dayjs().subtract(18, 'year').toDate(), 'You must be at least 18'),
+  // age: Yup.date()
+  //   .required('Birth‑date is required')
+  //   .max(dayjs().subtract(18, 'year').toDate(), 'You must be at least 18'),
+  age: Yup.string()
+    .required('Age should be 18 or older')
+    .matches(
+      /^[A-Za-z]+\s\d{1,2},\s\d{4}$/,
+      'Enter a valid date format like April 24, 2025',
+    ),
   location: Yup.string().required('Location is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
   contactNumber: Yup.string()
@@ -48,14 +60,38 @@ interface FormValues {
 }
 
 const DetailsFill = ({route}) => {
-  const {param} = route.params;
-  console.log(param, 'param=======>');
+  const param = route.params?.param;
+
   const navigation = useNavigation();
   const formikRef = useRef<FormikProps<FormValues>>(null);
   const [countryCode, setCountryCode] = useState('MY');
   const [country, setCountry] = useState(null);
   const [date, setDate] = useState(new Date());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const textInputRef = useRef<TextInput>(null);
+
+  const today = new Date();
+  const minDate = new Date(
+    today.getFullYear() - 100,
+    today.getMonth(),
+    today.getDate(),
+  ); // 100 saal pehle
+
+  const calculateAge = birthDate => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+    return age;
+  };
 
   const handleFormSubmit = async (values: FormValues) => {
     console.log(values, '============>>>>>>>>>>>>>');
@@ -76,6 +112,24 @@ const DetailsFill = ({route}) => {
     } catch (error) {
       console.error('Error storing user details:', error);
     }
+  };
+
+  const handleLocationSearch = async query => {
+    if (query.trim()) {
+      try {
+        const response = await Geocoding.from(query);
+        setLocationSuggestions(response.results);
+      } catch (error) {
+        console.error('Error fetching location suggestions:', error);
+      }
+    } else {
+      setLocationSuggestions([]);
+    }
+  };
+
+  const handleLocationSelect = (location, handleChange) => {
+    handleChange('location')(location.formatted_address);
+    setModalVisible(false);
   };
 
   return (
@@ -124,31 +178,142 @@ const DetailsFill = ({route}) => {
                       <Text style={styles.errorText}>{errors.name}</Text>
                     )}
 
-                    <CustomTextInput
-                      placeholder={Texts.Age}
-                      onChangeText={handleChange('age')}
-                      onBlur={handleBlur('age')}
-                      value={values.age}
-                    />
+                    <TouchableOpacity onPress={() => setOpen(true)}>
+                      <CustomTextInput
+                        placeholder={Texts.Age}
+                        onChangeText={handleChange('age')}
+                        onBlur={handleBlur('age')}
+                        value={values.age}
+                        editable={false}
+                        style={styles.dateInput}
+                      />
+                      <DatePicker
+                        modal
+                        mode="date"
+                        open={open}
+                        date={date}
+                        minimumDate={minDate}
+                        maximumDate={today}
+                        onConfirm={selectedDate => {
+                          setOpen(false);
+                          setDate(selectedDate);
+
+                          const age = calculateAge(selectedDate);
+                          if (age >= 18) {
+                            const formattedDate =
+                              selectedDate.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              });
+                            setFieldValue('age', formattedDate);
+                          } else {
+                            ShowToast;
+                          }
+                        }}
+                        onCancel={() => {
+                          setOpen(false);
+                        }}
+                      />
+                    </TouchableOpacity>
+
                     {touched.name && errors.age && (
                       <Text style={styles.errorText}>{errors.age}</Text>
                     )}
 
-                    <CustomTextInput
-                      placeholder={Texts.Location}
-                      onChangeText={handleChange('location')}
-                      onBlur={handleBlur('location')}
-                      value={values.location}
-                    />
-                    {touched.location && errors.location && (
-                      <Text style={styles.errorText}>{errors.location}</Text>
-                    )}
+                    <View style={{flex: 1}}>
+                      {/* Your custom text input */}
+                      <CustomTextInput
+                        placeholder={Texts.Location}
+                        onChangeText={text => {
+                          handleChange('location')(text);
+                          handleLocationSearch(text);
+                        }}
+                        onBlur={handleBlur('location')}
+                        value={values.location}
+                        onFocus={() => setModalVisible(true)}
+                      />
+                      {touched.location && errors.location && (
+                        <Text style={styles.errorText}>{errors.location}</Text>
+                      )}
+
+                      {/* Location Search Modal */}
+                      <Modal
+                        visible={modalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setModalVisible(false)}>
+                        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                          <View
+                            style={{
+                              flex: 1,
+                              backgroundColor: 'rgba(0,0,0,0.3)',
+                              justifyContent: 'flex-end',
+                            }}>
+                            <KeyboardAvoidingView
+                              behavior={
+                                Platform.OS === 'ios' ? 'padding' : undefined
+                              }
+                              style={{flex: 1}}>
+                              <View
+                                style={{
+                                  backgroundColor: 'white',
+                                  height: '60%',
+                                  padding: 10,
+                                }}>
+                                <TextInput
+                                  ref={textInputRef}
+                                  style={{
+                                    borderWidth: 1,
+                                    padding: 8,
+                                    marginBottom: 10,
+                                  }}
+                                  placeholder="Search for a location"
+                                  onChangeText={text => {
+                                    handleLocationSearch(text);
+                                    formikRef.current?.setFieldValue(
+                                      'location',
+                                      text,
+                                    );
+                                  }}
+                                  value={formikRef.current?.values.location}
+                                  autoFocus // Helps with keyboard focus
+                                />
+
+                                <FlatList
+                                  data={locationSuggestions}
+                                  renderItem={({item}) => (
+                                    <TouchableOpacity
+                                      onPress={() =>
+                                        handleLocationSelect(item)
+                                      }>
+                                      <Text style={{padding: 10}}>
+                                        {item.formatted_address}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  )}
+                                  keyExtractor={(item, index) =>
+                                    index.toString()
+                                  }
+                                  keyboardShouldPersistTaps="handled"
+                                />
+
+                                <TouchableOpacity
+                                  onPress={() => setModalVisible(false)}
+                                  style={{marginTop: 10}}>
+                                  <Text>Cancel</Text>
+                                </TouchableOpacity>
+                              </View>
+                            </KeyboardAvoidingView>
+                          </View>
+                        </TouchableWithoutFeedback>
+                      </Modal>
+                    </View>
 
                     <CustomTextInput
                       placeholder={Texts.Email_Address}
-                      keyboardType="email-address"
                       onChangeText={text =>
-                        handleChange('email')(text.toLowerCase())
+                        handleChange('email')(text.replace(/\s+/g, ''))
                       }
                       onBlur={handleBlur('email')}
                       value={values.email}
@@ -190,23 +355,24 @@ const DetailsFill = ({route}) => {
                       )}
                     </View>
                   </View>
+
+                  <View style={styles.bottomButtonContainer}>
+                    <OpacityButton
+                      button={{
+                        width: '85%',
+                        alignSelf: 'center',
+                      }}
+                      name={Texts.Continue}
+                      pressButton={() => {
+                        Keyboard.dismiss();
+                        formikRef.current?.handleSubmit();
+                      }}
+                    />
+                  </View>
                 </View>
               )}
             </Formik>
           </ScrollView>
-          <View style={styles.bottomButtonContainer}>
-            <OpacityButton
-              button={{
-                width: '85%',
-                alignSelf: 'center',
-              }}
-              name={Texts.Continue}
-              pressButton={() => {
-                Keyboard.dismiss();
-                formikRef.current?.handleSubmit();
-              }}
-            />
-          </View>
         </View>
       </LinearGradient>
     </KeyboardAvoidingView>
@@ -222,7 +388,7 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     paddingHorizontal: moderateScale(20),
-    marginTop: moderateScale(50),
+    marginTop: moderateScale(40),
   },
   scrollContent: {
     flexGrow: 1,
@@ -257,7 +423,7 @@ const styles = StyleSheet.create({
     marginLeft: moderateScale(12),
   },
   bottomButtonContainer: {
-    paddingBottom: moderateScale(55),
+    paddingBottom: moderateScale(5),
     backgroundColor: 'transparent',
   },
   inputWrapper: {
@@ -275,4 +441,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   placeholder: {color: '#999'},
+  map: {
+    width: '100%',
+    height: 300,
+    borderRadius: moderateScale(10),
+    marginTop: moderateScale(10),
+  },
+  selectedLocation: {
+    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 16,
+    color: '#000',
+    fontFamily: FontsFamilys.Poppins_Regular,
+  },
 });

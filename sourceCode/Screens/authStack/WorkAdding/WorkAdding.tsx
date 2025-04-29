@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -14,42 +14,45 @@ import {ImageUrl} from '../../../constant';
 import OpacityButton from '../../../components/OpacityButton';
 import {ROUTE_NAMES} from '../../../navigation/StackNavigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {createWork, getWork} from '../../../Api/helper';
+import {createWork, editWork, getWork} from '../../../Api/helper';
+import {useFocusEffect} from '@react-navigation/native';
+import {setWork} from '../../../Redux/cookiesReducer';
+import {useDispatch, useSelector} from 'react-redux';
 
 const WorkAdding = ({route, navigation}) => {
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
+  const [titleError, setTitleError] = useState('');
+  const [companyError, setCompanyError] = useState('');
+  const [jobs, setJobs] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const jobToEdit = route?.params?.jobToEdit;
   const jobIndex = route?.params?.jobIndex;
   const isEditing = jobToEdit && jobIndex !== undefined;
-  const [jobs, setJobs] = useState([]);
+
+  const dispatch = useDispatch();
+  const workdata = useSelector(state => state.cookies.work);
+  const workId = workdata?._id;
 
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && jobToEdit) {
       setTitle(jobToEdit.title);
       setCompany(jobToEdit.company);
     }
   }, [jobToEdit]);
 
-  const fetchWork = async userId => {
-    try {
-      const res = await getWork(userId);
-      console.log(
-        res.data.data.user.work[0].title,
-        '======>>>>>>>>>>>>qcsqqqe',
-        res.data.data.user.work[0].company,
-      );
-
-      setTitle(res?.data?.data?.user?.work[0].title);
-      setCompany(res?.data?.data?.user?.work[0].company);
-
-      if (res?.data?.work) {
-        setJobs(res.data.work);
+  useFocusEffect(
+    useCallback(() => {
+      if (jobToEdit && isEditing) {
+        setTitle(jobToEdit.title);
+        setCompany(jobToEdit.company);
+      } else {
+        setTitle('');
+        setCompany('');
       }
-    } catch (e) {
-      console.warn('getWork failed', e);
-    }
-  };
+    }, [route?.params]),
+  );
 
   useEffect(() => {
     (async () => {
@@ -59,7 +62,7 @@ const WorkAdding = ({route, navigation}) => {
           ? JSON.parse(storedUserData)
           : null;
         if (parsedUserData?._id) {
-          fetchWork(parsedUserData._id); // call the API
+          fetchWork(parsedUserData._id);
         }
       } catch (err) {
         console.warn('Failed to read userData', err);
@@ -67,59 +70,113 @@ const WorkAdding = ({route, navigation}) => {
     })();
   }, []);
 
+  const fetchWork = async userId => {
+    try {
+      const res = await getWork(userId);
+      const data = res?.data?.data?.user?.work;
+      dispatch(setWork(data));
+      if (isEditing) {
+        setTitle(data[0]?.title || '');
+        setCompany(data[0]?.company || '');
+      }
+      if (res?.data?.work) {
+        setJobs(res.data.work);
+      }
+    } catch (e) {
+      console.warn('getWork failed', e);
+    }
+  };
+
+  const validateFields = () => {
+    let valid = true;
+
+    if (!title.trim()) {
+      setTitleError('Title is required.');
+      valid = false;
+    } else {
+      setTitleError('');
+    }
+
+    if (!company.trim()) {
+      setCompanyError('Company is required.');
+      valid = false;
+    } else {
+      setCompanyError('');
+    }
+
+    return valid;
+  };
+
+  const handleEditJob = async newJob => {
+    const payload = {
+      title: newJob.title,
+      company: newJob.company,
+    };
+
+    try {
+      const storedUserData = await AsyncStorage.getItem('userData');
+      const userData = storedUserData ? JSON.parse(storedUserData) : null;
+      const userId = userData?._id;
+
+      const response = await editWork(payload, jobToEdit?._id, userId);
+      fetchWork(userId);
+      if (response?.status === 200 && response?.data?.success) {
+        const updatedJobs = jobs.map(job =>
+          job._id === workId ? {...job, ...payload} : job,
+        );
+        setJobs(updatedJobs);
+        await AsyncStorage.setItem('userJobs', JSON.stringify(updatedJobs));
+      } else {
+        console.log('Edit failed response:', response);
+      }
+    } catch (error) {
+      console.error('Error editing job:', error);
+    }
+  };
+
   const handleAdd = async () => {
-    if (title && company) {
-      try {
-        // Step 1: Retrieve stored user data
-        const storedUserData = await AsyncStorage.getItem('userData');
-        const parsedUserData = storedUserData
-          ? JSON.parse(storedUserData)
-          : null;
-        parsedUserData._id;
+    if (!validateFields()) {
+      return;
+    }
 
-        if (!parsedUserData || !parsedUserData._id) {
-          Alert.alert('Error', 'User ID not found');
-          return;
-        }
+    setIsLoading(true);
+    const newJob = {title: title.trim(), company: company.trim()};
 
-        const userId = parsedUserData._id;
-        const data = {
-          id: parsedUserData._id,
-          title: title,
-          company: company,
-        };
-        // Step 2: Create the job object with userId
-        const newJob = {userId, title, company};
-        console.log(data, 'hdsbfhjsdbhj=====>');
-        // Step 3: Call the API
+    try {
+      const storedUserData = await AsyncStorage.getItem('userData');
+      const parsedUserData = storedUserData ? JSON.parse(storedUserData) : null;
+
+      if (!parsedUserData?._id) {
+        console.error('User ID not found');
+        return;
+      }
+
+      const userId = parsedUserData._id;
+
+      if (isEditing) {
+        await handleEditJob(newJob);
+        navigation.navigate(ROUTE_NAMES.AddWork, {
+          updatedJob: newJob,
+          jobIndex,
+        });
+      } else {
+        const data = {id: userId, title: newJob.title, company: newJob.company};
         const response = await createWork(data);
-        console.log(response?.data, '=============>');
         if (response?.status === 200) {
-          // Step 4: Store in AsyncStorage
-          const existingJobs = await AsyncStorage.getItem('userJobs');
-          const jobsArray = existingJobs ? JSON.parse(existingJobs) : [];
-
-          if (isEditing) {
-            jobsArray[jobIndex] = newJob;
-          } else {
-            jobsArray.push(newJob);
-          }
-
-          await AsyncStorage.setItem('userJobs', JSON.stringify(jobsArray));
-
-          // Step 5: Navigate back with data
+          fetchWork(userId);
+          setTitle('');
+          setCompany('');
           navigation.navigate(ROUTE_NAMES.AddWork, {
-            ...(isEditing ? {updatedJob: newJob, jobIndex} : {newJob}),
+            newJob: {userId, title: newJob.title, company: newJob.company},
           });
         } else {
-          Alert.alert('Error', 'Failed to save work info');
+          console.error('Failed to save work info');
         }
-      } catch (error) {
-        console.error('Create work error:', error);
-        Alert.alert('Error', 'Something went wrong!');
       }
-    } else {
-      Alert.alert('Please fill in both title and company');
+    } catch (error) {
+      console.error('Create/edit work error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -147,27 +204,40 @@ const WorkAdding = ({route, navigation}) => {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Title</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, titleError ? {borderColor: 'red'} : {}]}
               placeholder="Data Analyst"
               placeholderTextColor="#000"
-              onChangeText={setTitle}
+              onChangeText={text => {
+                setTitle(text);
+                if (text.trim()) setTitleError('');
+              }}
               value={title}
             />
+            {titleError ? (
+              <Text style={styles.errorText}>{titleError}</Text>
+            ) : null}
 
             <Text style={styles.label}>Company / Industry</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, companyError ? {borderColor: 'red'} : {}]}
               placeholder="Tech"
               placeholderTextColor="#000"
-              onChangeText={setCompany}
+              onChangeText={text => {
+                setCompany(text);
+                if (text.trim()) setCompanyError('');
+              }}
               value={company}
             />
+            {companyError ? (
+              <Text style={styles.errorText}>{companyError}</Text>
+            ) : null}
           </View>
 
           <OpacityButton
-            name={'Add'}
+            name={isEditing ? 'Update' : 'Add'}
             button={styles.addButton}
-            pressButton={() => handleAdd()}
+            pressButton={handleAdd}
+            loading={isLoading}
           />
         </View>
       </SafeAreaView>
@@ -190,7 +260,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginTop: verticalScale(45),
-    marginHorizontal: moderateScale(4),
+    marginHorizontal: moderateScale(14),
   },
   label: {
     fontSize: moderateScale(12),
@@ -207,5 +277,12 @@ const styles = StyleSheet.create({
   },
   addButton: {
     alignSelf: 'center',
+    height: verticalScale(39),
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: verticalScale(-14),marginBottom: verticalScale(10),
+    marginLeft: moderateScale(14),
   },
 });

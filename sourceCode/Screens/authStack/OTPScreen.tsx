@@ -21,16 +21,21 @@ import {useRoute} from '@react-navigation/native';
 import {Login, sendOtp, VerifyOtp} from '../../Api/helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ShowToast} from '../../Api/ToastService';
+import {setLoginData} from '../../Redux/cookiesReducer';
+import {useDispatch} from 'react-redux';
 
 const OTPScreen = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
+
   const inputsRef = useRef([]);
   const navigation = useNavigation();
   const hasStarted = useRef(false);
   const [showOtp, setShowOtp] = useState('');
   const route = useRoute();
-  const {phone} = route.params || {};
+  const {phone, countryCode} = route.params || {};
   const [isloding, setIsloading] = useState(false);
+  const dispatch = useDispatch();
+  console.log('Phone number from route:', phone);
 
   useEffect(() => {
     setTimeout(() => {
@@ -141,13 +146,18 @@ const OTPScreen = () => {
 
       console.log('OTP Verified:', response?.data);
 
-      if (response?.data?.status) {
-        setIsloading(false);
-        ShowToast(response?.data?.message);
-        navigation.navigate(ROUTE_NAMES.VerifyHuman);
+      if (response?.data?.data?.user?.isRegister) {
+        dispatch(setLoginData(response?.data?.data));
+        navigation.navigate(ROUTE_NAMES?.TabNavigation);
       } else {
-        setIsloading(false);
-        alert(response?.data?.message || 'OTP verification failed');
+        if (response?.data?.status) {
+          setIsloading(false);
+          ShowToast(response?.data?.message);
+          navigation.navigate(ROUTE_NAMES.VerifyHuman);
+        } else {
+          setIsloading(false);
+          alert(response?.data?.message || 'OTP verification failed');
+        }
       }
     } catch (error: any) {
       setIsloading(false);
@@ -200,9 +210,7 @@ const OTPScreen = () => {
       />
 
       <SafeAreaView style={{flex: 1}}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{flex: 1}}>
+        <View style={{flex: 1}}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
               <Header
@@ -214,11 +222,16 @@ const OTPScreen = () => {
                 }}
               />
               <Text style={styles.title}>{Texts.Enter_OTP}</Text>
-              <Text style={styles.subtitle}>
+              {/* <Text style={styles.subtitle}>
                 {Texts.We_sent_OTP_email},{'\n'}
                 random3321@gmail.com
+              </Text> */}
+
+              <Text style={styles.subtitle}>
+                {Texts.We_sent_OTP_nmber}
+                {' +'}
+                {phone}
               </Text>
-              <Text style={{color: '#000', marginTop: 10}}>OTP: {showOtp}</Text>
               <View style={styles.otpContainer}>
                 {otp.map((digit, index) => (
                   <TextInput
@@ -241,7 +254,7 @@ const OTPScreen = () => {
               </Text>
 
               <OpacityButton
-                button={{marginVertical: 22, width: '76%'}}
+                button={{marginVertical: 22, width: '76%',height: moderateScale(49),}}
                 name={Texts.Verify}
                 loading={isloding}
                 pressButton={
@@ -250,13 +263,13 @@ const OTPScreen = () => {
                 }
               />
 
-              <Text style={styles.signInText}>
+              {/* <Text style={styles.signInText}>
                 {Texts.Remembered_Password}
                 <Text style={styles.signInLink}> {Texts.Sign_In}</Text>
-              </Text>
+              </Text> */}
             </View>
           </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -281,6 +294,7 @@ const styles = StyleSheet.create({
     color: Colors.light_black,
     marginTop: 10,
     fontFamily: FontsFamilys.Poppins_Regular,
+    width: '75%',
   },
   otpContainer: {
     flexDirection: 'row',

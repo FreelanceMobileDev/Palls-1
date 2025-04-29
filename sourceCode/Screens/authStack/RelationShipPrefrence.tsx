@@ -91,7 +91,8 @@ const RelationshipPreference = ({ route }) => {
         leftIconStyle={{left: 0}}
         onPressLeftImg={() => navigation.goBack()}
         containerstyle={{
-          marginTop: moderateScale(48),
+          marginTop: moderateScale(20),
+          marginLeft: moderateScale(12),
         }}
       />
       <Text style={styles.title}>{Texts.What_Looking}</Text>

@@ -19,6 +19,7 @@ const Texts = {
   Cookie_Policy: 'Cookie Policy.',
   Enter_OTP: 'Enter OTP',
   We_sent_OTP_email: `We’ve sent an OTP code to your email`,
+  We_sent_OTP_nmber: `We’ve sent an OTP code to your phone number`,
   Didnt_receive_code: `Didn’t receive any code? `,
   Resend: 'Resend',
   Verify: 'Verify',
@@ -67,5 +68,6 @@ const Texts = {
   Retake: 'Retake',
   Submit: 'Submit',
   Instrumental_Musical :'Instrumental Musical is an intimate event for those who love instrumental melodies to soothe their feelings.'
+
 };
 export default Texts;

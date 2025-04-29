@@ -3,7 +3,6 @@ import store from '../Redux/store';
 import {setLoading} from '../Redux/reducer';
 import {ShowToast} from './ToastService';
 
-// Common axios instance
 export const apiClient = axios.create({
   headers: {
     Accept: 'application/json',
@@ -11,7 +10,6 @@ export const apiClient = axios.create({
   },
 });
 
-// Axios instance for uploads
 export const apiClientUpload = axios.create({
   headers: {
     'Content-Type': 'multipart/form-data',

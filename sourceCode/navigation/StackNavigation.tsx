@@ -26,21 +26,28 @@ import ProfileScreen from '../Screens/TabScreens/ProfileScreen/ProfileScreen';
 import ContactUs from '../Screens/TabScreens/ProfileScreen/Contact_Us';
 import AddWork from '../Screens/authStack/Addwork/AddWork';
 import WorkAdding from '../Screens/authStack/WorkAdding/WorkAdding';
+import {useSelector} from 'react-redux';
 
 const Stack = createNativeStackNavigator();
 
 const StackNavigation = () => {
+  const {logindata} = useSelector<any>(store => store?.cookies);
   return (
     <Stack.Navigator
-      initialRouteName={ROUTE_NAMES.SplashScreen}
-      // initialRouteName={ROUTE_NAMES.AddWork}
+      initialRouteName={
+        logindata?.token ? ROUTE_NAMES.TabNavigation : ROUTE_NAMES.SplashScreen
+      }
+      // initialRouteName={
+      //    ROUTE_NAMES.DetailsFill
+      // }
       screenOptions={{
         headerShown: false,
         gestureEnabled: false,
         gestureDirection: 'horizontal',
       }}>
-      <Stack.Screen name={ROUTE_NAMES.SplashScreen} component={SpleshScreen} />
+      <Stack.Screen name={ROUTE_NAMES.SplashScreen} component={DetailsFill} />
       <Stack.Screen name={ROUTE_NAMES.SignIn} component={SignIn} />
+      <Stack.Screen name={ROUTE_NAMES.SignUp} component={SignUp} />
       <Stack.Screen
         name={ROUTE_NAMES.EnterPhoneNumber}
         component={EnterPhoneNumber}
@@ -61,7 +68,7 @@ const StackNavigation = () => {
         component={UploadPicture}
       />
       <Stack.Screen name={ROUTE_NAMES.Gender} component={Gender} />
-      <Stack.Screen name={ROUTE_NAMES.SignUp} component={SignUp} />
+
       <Stack.Screen name={ROUTE_NAMES.OTPScreen} component={OTPScreen} />
       <Stack.Screen name={ROUTE_NAMES.VerifyHuman} component={VerifyHuman} />
       <Stack.Screen name={ROUTE_NAMES.DetailsFill} component={DetailsFill} />

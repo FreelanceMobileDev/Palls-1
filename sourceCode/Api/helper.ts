@@ -13,7 +13,21 @@ import {
   UPLOAD_IMAGE,
   CREATE_WORK,
   GET_WORK,
+  EDIT_WORK,
+  PUTMETHOD,
+  DELETE,
+  DELETE_WORK,
+  LOGIN,
 } from './url';
+
+export const login = payload => {
+  return apiClient({
+    baseURL: BASE_URL,
+    method: POST_METHOD,
+    url: `${LOGIN}`,
+    data: payload,
+  });
+};
 
 export const sendOtp = payload => {
   return apiClient({
@@ -77,11 +91,30 @@ export const createWork = payload => {
 };
 
 export const getWork = userId => {
-  console.log(userId,'========userId=====>>>>>>=======>>>>>>');
-  
   return apiClient({
     baseURL: BASE_URL,
     method: GET_METHOD,
     url: `${GET_WORK}?id=${userId}`,
+  });
+};
+
+export const editWork = (payload, jobId, userId) => {
+  console.log(jobId, '=ojnwoncwndcwjncjncjnc', userId, 'qedewddwcwc', payload);
+
+  return apiClient({
+    baseURL: BASE_URL,
+    method: PUTMETHOD,
+    url: `${EDIT_WORK}?workId=${jobId}&id=${userId}`,
+    data: payload,
+  });
+};
+
+export const deleteWork = (jobId, userId) => {
+  console.log(jobId, 'jobId====>>>', userId, 'userId');
+
+  return apiClient({
+    baseURL: BASE_URL,
+    method: DELETE,
+    url: `${DELETE_WORK}?workId=${jobId}&id=${userId}`,
   });
 };

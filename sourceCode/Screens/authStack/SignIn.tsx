@@ -1,66 +1,79 @@
-import {Dimensions, Image, StatusBar, StyleSheet, Text} from 'react-native';
-import React from 'react';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  StatusBar,
+  StyleSheet,
+  Text,
+} from 'react-native';
+import React, {useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {Colors, FontSize, FontsFamilys, ImageUrl, Texts} from '../../constant';
 import OpacityButton from '../../components/OpacityButton';
 import {useNavigation} from '@react-navigation/native';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
+import {moderateScale} from '../../utils/responsive';
+import {ScrollView} from 'react-native-gesture-handler';
 
 const SignIn = () => {
   const navigation = useNavigation();
+
+  const [isLoading, setIsLoading] = useState(false);
+
   return (
     <LinearGradient
       colors={['#FEB413', '#F9F9F9']}
       locations={[0, 0.8]}
       style={styles.container}>
-      <StatusBar backgroundColor={Colors.dark_yellow} />
-      <Image
-        source={ImageUrl.PallsSignupLogo}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-      <Text style={styles.heading}>
-        {Texts.Lets_meet}
-        {'\n'}
-        {Texts.People_aound}
-      </Text>
-
-      <OpacityButton
-        name={Texts.Login_With_phone}
-        img1={ImageUrl.CallIcon}
-        pressButton={() => navigation.navigate(ROUTE_NAMES.EnterPhoneNumber)}
-        button={styles.phonebuttonstyle}
-      />
-      <OpacityButton
-        name={Texts.Login_with_Google}
-        img1={ImageUrl.GoogleIcon}
-        button={styles.googlebuttonstyle}
-      />
-
-      <Text style={styles.signupText}>
-        {Texts.Dont_have_account}{' '}
-        <Text
-          style={styles.signupLink}
-          onPress={() => navigation.navigate(ROUTE_NAMES.SignUp)}
-        >
-          {Texts.Sign_Up}
+      <ScrollView contentContainerStyle={{alignItems: 'center'}}>
+        <StatusBar backgroundColor={Colors.dark_yellow} />
+        <Image
+          source={ImageUrl.PallsSignupLogo}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.heading}>
+          {Texts.Lets_meet}
+          {'\n'}
+          {Texts.People_aound}
         </Text>
-      </Text>
+
+        <OpacityButton
+          name={Texts.Login_With_phone}
+          img1={ImageUrl.CallIcon}
+          pressButton={navigation.navigate(ROUTE_NAMES.EnterPhoneNumber)}
+          button={styles.phonebuttonstyle}
+          loading={isLoading}
+        />
+        <OpacityButton
+          name={Texts.Login_with_Google}
+          img1={ImageUrl.GoogleIcon}
+          button={styles.googlebuttonstyle}
+        />
+
+        <Text style={styles.signupText}>
+          {Texts.Dont_have_account}{' '}
+          <Text
+            style={styles.signupLink}
+            onPress={() => navigation.navigate(ROUTE_NAMES.SignUp)}>
+            {Texts.Sign_Up}
+          </Text>
+        </Text>
+      </ScrollView>
     </LinearGradient>
   );
 };
 
 export default SignIn;
 
+const {height} = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    // justifyContent: 'center',
   },
   logo: {
     // width: 150,
-    height: '59%',
+    height: height / 2,
     width: '98%',
     // borderWidth:1
   },
@@ -69,7 +82,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FontsFamilys.Poppins_SemiBold,
     color: Colors.Main_Black,
-    marginVertical: 10,
+    marginVertical: moderateScale(30),
   },
 
   signupText: {

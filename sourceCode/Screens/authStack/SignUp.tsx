@@ -14,10 +14,12 @@ import {Colors, FontSize, FontsFamilys, ImageUrl, Texts} from '../../constant';
 import OpacityButton from '../../components/OpacityButton';
 import {useNavigation} from '@react-navigation/native';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
-import { moderateScale } from '../../utils/responsive';
+import {moderateScale} from '../../utils/responsive';
 
 const SignUp = () => {
   const navigation = useNavigation();
+
+  const {height} = Dimensions.get('window');
 
   return (
     <LinearGradient
@@ -43,7 +45,7 @@ const SignUp = () => {
         </Text>
         <Text style={[styles.signupText, {marginTop: 0}]}>
           {Texts.how_process_your_our}{' '}
-          <Text style={styles.signupLink}>{Texts.Privacy_Policy}</Text>.{' '}
+          <Text style={styles.signupLink}>{Texts.Privacy_Policy}</Text>{' '}
           {Texts.and}
         </Text>
         <Text style={[styles.signupLink, {marginBottom: 5}]}>
@@ -54,6 +56,7 @@ const SignUp = () => {
         <OpacityButton
           name={Texts.Sign_up_with_phone_number}
           img1={ImageUrl.CallIcon}
+          pressButton={() => navigation.navigate(ROUTE_NAMES.EnterPhoneNumber)}
         />
         <OpacityButton
           name={Texts.Sign_up_with_Google}
@@ -62,7 +65,7 @@ const SignUp = () => {
         />
 
         {/* Already have an account? Sign In */}
-        <Text style={styles.signupText}>
+        <Text style={styles.signupText2}>
           {Texts.Dont_have_account}{' '}
           <Text
             style={styles.signupLink}
@@ -79,6 +82,8 @@ const SignUp = () => {
 
 export default SignUp;
 
+const {height} = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -88,24 +93,30 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   logo: {
-    // height: '100%',
+    height: height / 2,
     width: '98%',
-    // borderWidth:1
   },
   heading: {
     fontSize: FontSize.T_four,
     textAlign: 'center',
     fontFamily: FontsFamilys.Poppins_SemiBold,
     color: Colors.Main_Black,
-    marginTop: 10,
+    marginTop: moderateScale(10),
   },
   signupText: {
     marginTop: 20,
-    fontSize: FontSize.twelve,
     fontFamily: FontsFamilys.Poppins_Medium,
     color: 'rgba(34, 23, 42, 0.7)',
     textAlign: 'center',
-    width:'90%',
+    width: '100%',
+  },
+  signupText2: {
+    marginTop: 20,
+    fontSize: FontSize.fourteen,
+    fontFamily: FontsFamilys.Poppins_Medium,
+    color: 'rgba(34, 23, 42, 0.7)',
+    textAlign: 'center',
+    width: '100%',
   },
   signupLink: {
     color: Colors.dark_yellow,

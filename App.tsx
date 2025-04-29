@@ -12,6 +12,7 @@ import {
   requestUserPermission,
 } from './sourceCode/utils/notificationServices';
 
+
 const App = () => {
   useEffect(() => {
     const setupNotifications = async () => {

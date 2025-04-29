@@ -15,35 +15,47 @@ import {FontsFamilys, ImageUrl, Texts} from '../../constant';
 import {useNavigation} from '@react-navigation/native';
 import {moderateScale, scale} from '../../utils/responsive';
 import CustomTextInput from '../../components/CustomTextInput';
-import {Formik} from 'formik';
-import * as Yup from 'yup';
 import OpacityButton from '../../components/OpacityButton';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {sendOtp} from '../../Api/helper';
 import CountryPicker from 'react-native-country-picker-modal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { setIsloading } from '../../Redux/reducer';
-
-const validationSchema = Yup.object().shape({
-  contactNumber: Yup.string()
-    .matches(/^\d+$/, 'Contact number must contain only digits')
-    .min(10, 'Contact number must be at least 10 digits')
-    .max(16, 'Contact number must not exceed 16 digits')
-    .required('Contact number is required'),
-});
 
 const EnterPhoneNumber = () => {
   const navigation = useNavigation();
   const [countryCode, setCountryCode] = useState('MY');
   const [country, setCountry] = useState(null);
   const [isLoading, setIsloading] = useState(false);
+  const [contactNumber, setContactNumber] = useState('');
+  const [error, setError] = useState('');
 
-  const handlePhoneSubmit = async (values: any) => {
+  const validatePhoneNumber = (number: string) => {
+    if (!number) {
+      return 'Please enter the number';
+    }
+    const onlyDigits = /^\d+$/;
+    if (!onlyDigits.test(number)) {
+      return 'Phone number must contain only digits';
+    } else if (number.length < 10) {
+      return 'Phone number must be at least 10 digits';
+    } else if (number.length > 16) {
+      return 'Phone number must not exceed 16 digits';
+    }
+    return '';
+  };
+
+  const handlePhoneSubmit = async () => {
+    const validationError = validatePhoneNumber(contactNumber);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setError('');
     try {
-      const payload = {phone: values.contactNumber};
+      const payload = {phone: contactNumber};
       setIsloading(true);
       const response = await sendOtp(payload);
-      console.log('Login API response:', response?.data);
+      console.log('send otp API response:', response?.data);
       const userId = response?.data?.data?.response?._id;
       console.log('User ID:', userId);
       await storeApiResponse(response);
@@ -51,25 +63,24 @@ const EnterPhoneNumber = () => {
       if (response?.data?.status) {
         setIsloading(false);
         navigation.navigate('OTPScreen', {
-          phone: values.contactNumber,
+          phone:
+            (country?.callingCode?.[0] ? country.callingCode[0] : '60') +
+            ' ' +
+            contactNumber,
         });
       } else {
         setIsloading(false);
-        // alert(
-        //   response?.data?.message || 'Something went wrong. Please try again.',
-        // );
       }
     } catch (error) {
       setIsloading(false);
       console.error('Login API error:', error);
-      // alert('Something went wrong. Please try again.');
     }
   };
 
-  const storeApiResponse = async response => {
+  const storeApiResponse = async (response: any) => {
     try {
       const fullData = response?.data?.data?.response;
-      console.log(fullData, 'sjhfgvswjrgfuwg');
+      console.log(fullData, 'Saving to AsyncStorage');
 
       if (fullData) {
         await AsyncStorage.setItem('userData', JSON.stringify(fullData));
@@ -87,90 +98,77 @@ const EnterPhoneNumber = () => {
         locations={[0, 1]}
         style={StyleSheet.absoluteFill}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{flex: 1}}>
+          style={{flex: 1}}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={{flex: 1}}>
-              {/* Removed unnecessary string literal here: {' '} */}
-              <ScrollView
-                contentContainerStyle={styles.scrollViewContent}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}>
-                <Header
-                  leftIcon={ImageUrl.BackIcon}
-                  onPressLeftImg={() => navigation.goBack()}
-                  containerstyle={{
-                    marginTop: moderateScale(48),
-                    marginLeft: moderateScale(22),
-                  }}
-                />
-                <View style={styles.Enter_Number_View}>
-                  <Text style={styles.Enter_Number}>{Texts.Enter_Number}</Text>
-                </View>
-                <Formik
-                  initialValues={{contactNumber: ''}}
-                  validationSchema={validationSchema}
-                  onSubmit={handlePhoneSubmit}>
-                  {({
-                    handleChange,
-                    handleBlur,
-                    handleSubmit,
-                    values,
-                    errors,
-                    touched,
-                  }) => (
-                    <View style={styles.formContainer}>
-                      <View>
-                        <View style={styles.inputWrapper}>
-                          <CustomTextInput
-                            placeholder={Texts.Phone_Number}
-                            keyboardType="numeric"
-                            onChangeText={handleChange('contactNumber')}
-                            onBlur={handleBlur('contactNumber')}
-                            value={values.contactNumber}
-                            length={16}
-                            // ✅ Injecting country picker as leftComponent
-                            leftComponent={
-                              <>
-                                <CountryPicker
-                                  withFlag
-                                  withCallingCode
-                                  withFilter
-                                  withCallingCodeButton
-                                  withCountryNameButton={false}
-                                  countryCode={countryCode}
-                                  onSelect={country => {
-                                    setCountryCode(country.cca2);
-                                    setCountry(country);
-                                  }}
-                                />
-                                {/* <Text style={{marginLeft: 4}}>
-                                +{country?.callingCode?.[0] || ''}
-                              </Text> */}
-                              </>
-                            }
-                          />
-                        </View>
-                        {touched.contactNumber && errors.contactNumber && (
-                          <Text style={styles.errorText}>
-                            {errors.contactNumber}
-                          </Text>
-                        )}
-                      </View>
+              <View style={{flex: 1}}>
+                <ScrollView
+                  contentContainerStyle={{flexGrow: 1}}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}>
+                  <Header
+                    leftIcon={ImageUrl.BackIcon}
+                    onPressLeftImg={() => navigation.goBack()}
+                    containerstyle={{
+                      marginTop: moderateScale(48),
+                      marginLeft: moderateScale(22),
+                    }}
+                  />
 
-                      <OpacityButton
-                        name={Texts.Next}
-                        pressButton={handleSubmit}
-                        button={styles.bottomButton}
-                        loading={isLoading}
+                  <View style={styles.Enter_Number_View}>
+                    <Text style={styles.Enter_Number}>
+                      {Texts.Enter_Number}
+                    </Text>
+                  </View>
+
+                  <View style={styles.formContainer}>
+                    <View style={styles.inputWrapper}>
+                      <CustomTextInput
+                        placeholder={Texts.Phone_Number}
+                        keyboardType="numeric"
+                        value={contactNumber}
+                        onChangeText={text => {
+                          if (/^\d*$/.test(text)) {
+                            setContactNumber(text);
+                          }
+                        }}
+                        length={16}
+                        leftComponent={
+                          <CountryPicker
+                            withFlag
+                            withCallingCode
+                            withFilter
+                            withCallingCodeButton
+                            withCountryNameButton={false}
+                            countryCode={countryCode}
+                            onSelect={country => {
+                              setCountryCode(country.cca2);
+                              setCountry(country);
+                            }}
+                          />
+                        }
                       />
+                      {error ? (
+                        <Text style={styles.errorText}>{error}</Text>
+                      ) : null}
                     </View>
-                  )}
-                </Formik>
-              </ScrollView>
+                  </View>
+                </ScrollView>
+              </View>
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
+
+        <View style={styles.fixedButtonContainer}>
+          <OpacityButton
+            name={Texts.Next}
+            pressButton={handlePhoneSubmit}
+            button={styles.bottomButton}
+            loading={isLoading}
+          />
+        </View>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -182,12 +180,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    padding: 10,
+    padding: moderateScale(10),
   },
   scrollViewContent: {
     flexGrow: 1,
     justifyContent: 'space-between',
-    paddingBottom: moderateScale(120),
   },
   Enter_Number_View: {
     marginVertical: moderateScale(40),
@@ -203,29 +200,31 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: scale(11),
     fontFamily: FontsFamilys.Poppins_Regular,
-    alignSelf: 'center',
-    marginTop: moderateScale(4),
+    marginTop: moderateScale(2),
   },
   inputWrapper: {
     width: '70%',
     alignSelf: 'center',
-    flexDirection: 'row',
     alignItems: 'center',
   },
   formContainer: {
     flex: 1,
     width: '100%',
     justifyContent: 'space-between',
-    paddingBottom: moderateScale(30),
   },
   bottomButton: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? moderateScale(40) : moderateScale(-30),
-    alignSelf: 'center',
     width: '75%',
+    height: moderateScale(49),
   },
   countryPickerStyle: {
     marginTop: moderateScale(14),
     marginLeft: moderateScale(-15),
+  },
+  fixedButtonContainer: {
+    position: 'static',
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    marginBottom: moderateScale(40),
   },
 });

@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {FontsFamilys, FontSize, ImageUrl, Texts} from '../../constant';
-import {moderateScale, scale} from '../../utils/responsive';
+import {moderateScale, scale, verticalScale} from '../../utils/responsive';
 import {useNavigation} from '@react-navigation/native';
 import {
   StyleSheet,
@@ -13,12 +13,12 @@ import {
   PermissionsAndroid,
   Alert,
   Linking,
+  Modal,
+  Pressable,
 } from 'react-native';
 import Header from '../../components/Header';
 import OpacityButton from '../../components/OpacityButton';
-import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {imageUpload} from '../../Api/helper';
 import {useDispatch} from 'react-redux';
 import {setImages} from '../../Redux/cookiesReducer';
@@ -28,16 +28,69 @@ const UploadPicture = ({route}) => {
   console.log(param, 'param from DetailsFill=========>>>>>>');
   const navigation = useNavigation<any>();
   const [error, setError] = useState('');
-
+  const [pickerVisible, setPickerVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<{[key: number]: string}>(
     {},
   );
   const dispatch = useDispatch();
+
+  const PhotoPickerModal = ({visible, onClose, onResult}) => {
+    const pick = async (source: 'camera' | 'gallery') => {
+      try {
+        const result =
+          source === 'camera'
+            ? await launchCamera({
+                mediaType: 'photo',
+                cameraType: 'back',
+                quality: 1,
+              })
+            : await launchImageLibrary({mediaType: 'photo', quality: 1});
+
+        onResult(result);
+      } finally {
+        onClose();
+      }
+    };
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent
+        visible={visible}
+        onRequestClose={onClose}>
+        <Pressable style={styles.backdrop} onPress={onClose}>
+          {/* empty pressable to close when tapping outside */}
+        </Pressable>
+
+        <View style={styles.sheet}>
+          <Text style={styles.title}>Upload Photo</Text>
+
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => pick('camera')}>
+            <Text style={styles.optionText}>Take Photo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => pick('gallery')}>
+            <Text style={styles.optionText}>Choose from Gallery</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.option, styles.cancel]}
+            onPress={onClose}>
+            <Text style={[styles.optionText, styles.cancelText]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    );
+  };
+
   const requestStoragePermission = async () => {
     if (Platform.OS === 'android') {
       try {
-        // For Android 13 and above, we don't need storage permissions
         if (Platform.Version >= 33) {
           return true;
         }
@@ -78,43 +131,7 @@ const UploadPicture = ({route}) => {
       );
       return;
     }
-
-    Alert.alert(
-      'Upload Photo',
-      'Choose a method',
-      [
-        {
-          text: 'Take Photo',
-          onPress: async () => {
-            const result = await launchCamera({
-              mediaType: 'photo',
-              cameraType: 'back',
-              quality: 1,
-            });
-
-            handleImageResult(result);
-          },
-        },
-        {
-          text: 'Choose from Gallery',
-          onPress: async () => {
-            const result = await launchImageLibrary({
-              mediaType: 'photo',
-              quality: 1,
-            });
-
-            handleImageResult(result);
-          },
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ],
-      {cancelable: true},
-    );
-
-    // console.log('====>>>test')
+    setPickerVisible(true);
   };
 
   const handleImageResult = result => {
@@ -169,7 +186,7 @@ const UploadPicture = ({route}) => {
         });
       });
       const response = await imageUpload(formData);
-      console.log(response, 'response======>');
+      console.log(formData, 'response======>');
       const resUrls = response?.data?.data?.urls;
       console.log(resUrls, 'resUrls=====>');
       dispatch(setImages(resUrls));
@@ -181,7 +198,6 @@ const UploadPicture = ({route}) => {
       });
     } catch (err) {
       setIsLoading(false);
-      // setError('Failed to upload images. Please try again.');
     }
   };
 
@@ -191,7 +207,6 @@ const UploadPicture = ({route}) => {
       style={[styles.photoBox, isLarge && styles.largeBox]}
       onPress={handleImagePick}>
       {' '}
-      {/* ← No need for key here anymore */}
       {selectedImages[key] ? (
         <Image
           source={{uri: selectedImages[key]}}
@@ -205,50 +220,59 @@ const UploadPicture = ({route}) => {
   );
 
   return (
-    <LinearGradient
-      colors={['#FEB413', '#F9F9F9']}
-      locations={[0, 0.8]}
-      style={styles.container}>
-      <Header
-        leftIcon={ImageUrl.BackIcon}
-        onPressLeftImg={() => navigation.goBack()}
-        containerstyle={{
-          marginTop: moderateScale(48),
-          marginLeft: moderateScale(22),
-        }}
+    <>
+      <PhotoPickerModal
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onResult={handleImageResult}
       />
-      <View style={styles.Enter_Number_View}>
-        <Text style={styles.Enter_Number}>{Texts.Recent_pic}</Text>
-        <Text style={styles.UploadText}>{Texts.Upload_Photo}</Text>
-      </View>
 
-      <View style={styles.photoGrid}>
-        <View style={styles.leftColumn}>
-          {renderPhotoBox(0, true)}
-          <View style={styles.bottomRow}>
-            {renderPhotoBox(1)}
-            {renderPhotoBox(2)}
+      <LinearGradient
+        colors={['#FEB413', '#F9F9F9']}
+        locations={[0, 0.8]}
+        style={styles.container}>
+        <Header
+          leftIcon={ImageUrl.BackIcon}
+          onPressLeftImg={() => navigation.goBack()}
+          containerstyle={{
+            marginTop: moderateScale(28),
+            marginLeft: moderateScale(22),
+          }}
+        />
+        <View style={styles.Enter_Number_View}>
+          <Text style={styles.Enter_Number}>{Texts.Recent_pic}</Text>
+          <Text style={styles.UploadText}>{Texts.Upload_Photo}</Text>
+        </View>
+
+        <View style={styles.photoGrid}>
+          <View style={styles.leftColumn}>
+            {renderPhotoBox(0, true)}
+            <View style={styles.bottomRow}>
+              {renderPhotoBox(1)}
+              {renderPhotoBox(2)}
+            </View>
+          </View>
+          <View style={styles.rightColumn}>
+            {renderPhotoBox(3)}
+            {renderPhotoBox(4)}
+            {renderPhotoBox(5)}
           </View>
         </View>
-        <View style={styles.rightColumn}>
-          {renderPhotoBox(3)}
-          {renderPhotoBox(4)}
-          {renderPhotoBox(5)}
+
+        {/* Error message if any */}
+        {error !== '' && <Text style={styles.errorText}>{error}</Text>}
+
+        {/* Bottom button */}
+        <View style={styles.bottomButton}>
+          <OpacityButton
+            name={Texts.Next}
+            loading={isLoading}
+            pressButton={handleSubmit}
+            button={{height: moderateScale(49)}}
+          />
         </View>
-      </View>
-
-      {/* Error message if any */}
-      {error !== '' && <Text style={styles.errorText}>{error}</Text>}
-
-      {/* Bottom button */}
-      <View style={styles.bottomButton}>
-        <OpacityButton
-          name={Texts.Next}
-          loading={isLoading}
-          pressButton={handleSubmit}
-        />
-      </View>
-    </LinearGradient>
+      </LinearGradient>
+    </>
   );
 };
 
@@ -291,10 +315,11 @@ const styles = StyleSheet.create({
   },
   UploadText: {
     textAlign: 'center',
-    fontSize: FontSize.fourteen,
+    fontSize: FontSize.twelve,
     fontFamily: FontsFamilys.Poppins_Medium,
-    marginVertical: moderateScale(28),
+    marginVertical: moderateScale(8),
     marginHorizontal: moderateScale(15),
+    opacity: 0.7,
   },
   photoBox: {
     height: scale(95),
@@ -349,5 +374,37 @@ const styles = StyleSheet.create({
   rightColumn: {
     flexDirection: 'column',
     gap: moderateScale(10),
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: '#00000099',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    paddingBottom: moderateScale(20),
+    paddingTop: moderateScale(12),
+    paddingHorizontal: moderateScale(24),
+    borderTopLeftRadius: moderateScale(20),
+    borderTopRightRadius: moderateScale(20),
+  },
+  title: {
+    fontSize: FontSize.eighteen,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: moderateScale(12),
+  },
+  option: {
+    paddingVertical: verticalScale(12),
+  },
+  optionText: {
+    fontSize: FontSize.eleven,
+    textAlign: 'center',
+  },
+  cancel: {
+    marginTop: moderateScale(4),
+  },
+  cancelText: {
+    color: '#F33',
+    fontWeight: '500',
   },
 });

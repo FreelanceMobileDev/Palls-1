@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {moderateScale, verticalScale} from '../../utils/responsive';
 import OpacityButton from '../../components/OpacityButton';
@@ -33,7 +33,7 @@ const ReviewPhotoScreen: React.FC<ReviewPhotoScreenProps> = () => {
     navigation.goBack();
   };
 
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (!photo || isLoading) return;
@@ -46,10 +46,11 @@ const ReviewPhotoScreen: React.FC<ReviewPhotoScreenProps> = () => {
         type: 'image/jpeg',
         name: 'upload.jpg',
       });
+      setIsLoading(true);
 
       const response = await imageUpload(formData);
       console.log('Upload success:', response.data.data.urls[0]);
-
+      setIsLoading(false);
       navigation.navigate(ROUTE_NAMES.DetailsFill, {
         param: response.data.data.urls[0],
       });
@@ -80,12 +81,13 @@ const ReviewPhotoScreen: React.FC<ReviewPhotoScreenProps> = () => {
         />
         <OpacityButton
           button={{
-            marginVertical: moderateScale(22),
             width: '43%',
-            paddingVertical: moderateScale(12),
+            height: verticalScale(40),
+            
           }}
           name={Texts.Submit}
           pressButton={handleSubmit}
+          loading={isLoading}
         />
       </View>
 
@@ -142,7 +144,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   retakeButton: {
-    marginVertical: 22,
     width: '43%',
     backgroundColor: '#F5F4FF',
   },

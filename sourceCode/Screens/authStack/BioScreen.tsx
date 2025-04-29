@@ -24,18 +24,19 @@ import {userRegister} from '../../Api/helper';
 import {useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import {BASE_URL, REGISTER_USER} from '../../Api/url';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {setLoginData} from '../../Redux/cookiesReducer';
 
 const BioScreen = ({route}) => {
   const param = route?.params;
+  console.log(param?.selectedJob?.title, 'param=======>wwwe');
 
   const navigation = useNavigation();
   const [bio, setBio] = useState('');
   const [selfie, setSelfie] = useState<string | null>(null);
   const {images, categeroies} = useSelector<any>(store => store?.cookies);
-
-  console.log(images, '1111111data===============>', param);
-
+  const [loading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
   const [selectedIdentity, setSelectedIdentity] = useState([]);
   const [selectedEducation, setSelectedEducation] = useState([]);
   const [work, setWork] = useState('Add Job');
@@ -52,7 +53,46 @@ const BioScreen = ({route}) => {
     }
   };
 
-  console.log(selectedIdentity.join(','), 'selectedIdentity=======>');
+  const handleNavigateToAddJob = async () => {
+    try {
+      await AsyncStorage.setItem('bio', bio);
+      await AsyncStorage.setItem(
+        'selectedIdentity',
+        JSON.stringify(selectedIdentity),
+      );
+      await AsyncStorage.setItem(
+        'selectedEducation',
+        JSON.stringify(selectedEducation),
+      );
+      navigation.navigate(ROUTE_NAMES.AddWork);
+    } catch (error) {
+      console.error('Error saving data before navigation:', error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadData = async () => {
+        try {
+          const storedBio = await AsyncStorage.getItem('bio');
+          const storedIdentity = await AsyncStorage.getItem('selectedIdentity');
+          const storedEducation = await AsyncStorage.getItem(
+            'selectedEducation',
+          );
+
+          if (storedBio !== null) setBio(storedBio);
+          if (storedIdentity !== null)
+            setSelectedIdentity(JSON.parse(storedIdentity));
+          if (storedEducation !== null)
+            setSelectedEducation(JSON.parse(storedEducation));
+        } catch (error) {
+          console.error('Error loading data on focus:', error);
+        }
+      };
+
+      loadData();
+    }, []),
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -64,6 +104,7 @@ const BioScreen = ({route}) => {
             if (jobsArray.length > 0) {
               const latestJob = jobsArray[jobsArray.length - 1];
               setWork(`${latestJob.title} at ${latestJob.company}`);
+              console.log(setWork, 'setWork=======>wdvververv');
             } else {
               setWork('Add Job');
             }
@@ -110,71 +151,84 @@ const BioScreen = ({route}) => {
 
   const handleSubmit = async () => {
     try {
-      await AsyncStorage.setItem(
-        'userIdentity',
-        JSON.stringify(selectedIdentity),
-      );
-      await AsyncStorage.setItem(
-        'userEducation',
-        JSON.stringify(selectedEducation),
-      );
+      // Ensure userIdentity and userEducation are updated before API call
+      // await AsyncStorage.setItem(
+      //   'userIdentity',
+      //   JSON.stringify(selectedIdentity),
+      // );
+      // await AsyncStorage.setItem(
+      //   'userEducation',
+      //   JSON.stringify(selectedEducation),
+      // );
 
       const userDetails = await AsyncStorage.getItem('userDetails');
       const storedUserData = await AsyncStorage.getItem('userData');
       const parsedUserData = storedUserData ? JSON.parse(storedUserData) : null;
 
-      console.log(parsedUserData?._id, 'storedUserData======>');
-      const storedIdentity = await AsyncStorage.getItem('userIdentity');
+      console.log(userDetails, 'userDetails=======>');
+
       const storedEducation = await AsyncStorage.getItem('userEducation');
-      const storedJobs = await AsyncStorage.getItem('userJobs');
-      const data = await AsyncStorage.getItem('uploadedImageUrls');
 
       const parsedDetails = userDetails ? JSON.parse(userDetails) : {};
-      const parsedIdentity = storedIdentity ? JSON.parse(storedIdentity) : [];
       const parsedEducation = storedEducation
         ? JSON.parse(storedEducation)
         : [];
-
-      let workInfo = 'Add Job';
-      if (storedJobs) {
-        const jobsArray = JSON.parse(storedJobs);
-        if (jobsArray.length > 0) {
-          const latestJob = jobsArray[jobsArray.length - 1];
-          workInfo = `${latestJob.title} at ${latestJob.company}`;
-        }
-      }
-
       const payload = {
         name: parsedDetails?.name,
-        dob: '01-01-0101',
+        dob: parsedDetails?.age ? parsedDetails?.age : '01-01-0101',
         location: 'Moscow',
         email: parsedDetails?.email,
         number: parsedDetails?.number,
         gender: parsedDetails?.gender,
         relationship: parsedDetails?.relationshipPreference,
         bio: bio,
-        selfieImage: param.length > 0 ? param : '',
+        selfieImage: Array.isArray(param) && param.length > 0 ? param : '',
         image: images,
         deviceToken: 'test',
         step: parsedDetails?.step || 0,
         iam: selectedIdentity.join(','),
         education: parsedEducation.join(','),
-
         categories: categeroies,
       };
+      console.log(payload, 'payload=======>');
       const p = `${BASE_URL}${REGISTER_USER}?id=${parsedUserData?._id}`;
 
       console.log(p, 'sdvdsvds===========>', payload);
 
+      // Set loading state first before making API request
+      setIsLoading(true);
+
+      // API call should be awaited here
       const response = await axios.post(p, payload);
-      console.log(response?.data, 'response=======>');
+
+      // Once the response is received, stop loading
+      setIsLoading(false);
+
+      dispatch(setLoginData(response?.data?.data));
+      console.log(response?.data?.data, 'response=======>');
+
+      // Clear AsyncStorage and reset states on successful response
+      await AsyncStorage.removeItem('bio');
+      await AsyncStorage.removeItem('selectedIdentity');
+      await AsyncStorage.removeItem('selectedEducation');
+      await AsyncStorage.removeItem('userJobs');
+      setSelectedIdentity([]);
+      setSelectedEducation([]);
+      setBio('');
+      setWork('Add Job');
+
       if (response?.status) {
-        navigation.navigate(ROUTE_NAMES.TabNavigation);
+        navigation.reset({
+          index: 0,
+          routes: [{name: ROUTE_NAMES.TabNavigation}],
+        });
+        // console.log('Registration Processed Successfully');
       } else {
         console.log('Registration failed');
       }
     } catch (error) {
       console.error('Error submitting registration:', error);
+      setIsLoading(false);
     }
   };
 
@@ -192,6 +246,13 @@ const BioScreen = ({route}) => {
     loadSelfie();
   }, []);
 
+  useEffect(() => {
+    if (route?.params?.selectedJob) {
+      const selectedJob = route.params.selectedJob;
+      setWork(`${selectedJob.title} at ${selectedJob.company}`);
+    }
+  }, [route?.params?.selectedJob]);
+
   return (
     <LinearGradient
       colors={['#FFC94D', '#FFE7B3', '#FFF3DA']}
@@ -201,16 +262,14 @@ const BioScreen = ({route}) => {
 
       <Header
         leftIcon={ImageUrl.BackIcon}
-        onPressLeftImg={() => navigation.goBack()}
+        onPressLeftImg={() => navigation.navigate(ROUTE_NAMES.HobbyScreen)}
         containerstyle={{
-          marginTop: moderateScale(48),
+          marginTop: moderateScale(50),
           alignItems: 'flex-start',
-          marginHorizontal: moderateScale(15),
+          marginHorizontal: moderateScale(12),
         }}
       />
-      <KeyboardAvoidingView
-        style={{flex: 1}}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={{flex: 1}}>
         <View style={{flex: 1}}>
           <ScrollView
             contentContainerStyle={[
@@ -225,7 +284,6 @@ const BioScreen = ({route}) => {
             <Text style={styles.subTitle}>
               Write interesting facts about yourself
             </Text>
-
             <TextInput
               style={styles.textArea}
               placeholder="Start here"
@@ -234,7 +292,6 @@ const BioScreen = ({route}) => {
               value={bio}
               onChangeText={setBio}
             />
-
             {/* I am.. Section */}
             <Text style={styles.heading}>I am..</Text>
             <View style={styles.tagsContainer}>
@@ -247,7 +304,6 @@ const BioScreen = ({route}) => {
                 />
               ))}
             </View>
-
             {/* Education Section */}
             <Text style={styles.heading}>Education</Text>
             <View style={styles.tagsContainer}>
@@ -260,24 +316,29 @@ const BioScreen = ({route}) => {
                 />
               ))}
             </View>
-
-            {/* Work Section */}
+            {console.log(work, 'work=======>==========3rwvrvrevervre')};
             <Text style={styles.heading}>Work</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate(ROUTE_NAMES.AddWork)}
+              onPress={handleNavigateToAddJob}
               style={styles.workInput}>
               <Text style={styles.workText}>
-                {work === 'Add Job' ? 'Add Job' : work}
+                {param?.selectedJob?.title
+                  ? `${param.selectedJob.title}, ${param.selectedJob.company}`
+                  : work}
               </Text>
+
               <Image source={ImageUrl.RightArrow} />
             </TouchableOpacity>
-
             <View style={styles.bottomButton}>
-              <OpacityButton name="Save" pressButton={handleSubmit} />
+              <OpacityButton
+                name="Save"
+                loading={loading}
+                pressButton={handleSubmit}
+              />
             </View>
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </LinearGradient>
   );
 };
@@ -307,7 +368,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FontsFamilys.Poppins_SemiBold,
     color: '#000',
-    width: '80%',
+    width: '90%',
     alignSelf: 'center',
   },
   subTitle: {
