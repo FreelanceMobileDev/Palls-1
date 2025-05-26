@@ -5,8 +5,6 @@ import {
   TextInput,
   View,
   StatusBar,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   TouchableOpacity,
   Image,
@@ -20,7 +18,6 @@ import OpacityButton from '../../components/OpacityButton';
 import {ROUTE_NAMES} from '../../navigation/StackNavigation';
 import {useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {userRegister} from '../../Api/helper';
 import {useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import {BASE_URL, REGISTER_USER} from '../../Api/url';

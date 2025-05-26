@@ -14,7 +14,8 @@ const SpleshScreen = () => {
 
 
   setTimeout(() => {
-    navigation.replace(ROUTE_NAMES.SignIn);
+    // navigation.replace(ROUTE_NAMES.SignIn);
+    navigation.replace(ROUTE_NAMES.DetailsFill);
   }, 1000);
 
   return (

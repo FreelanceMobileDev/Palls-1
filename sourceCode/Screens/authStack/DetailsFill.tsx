@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  TextInput,
 } from 'react-native';
 import React, {useRef, useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
@@ -27,9 +28,7 @@ import CountryPicker from 'react-native-country-picker-modal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-native-date-picker';
 import {ShowToast} from '../../Api/ToastService';
-import MapView, {Marker} from 'react-native-maps';
-import Geocoder from 'react-native-geocoding';
-import {FlatList, TextInput} from 'react-native-gesture-handler';
+import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
@@ -80,6 +79,24 @@ const DetailsFill = ({route}) => {
     today.getDate(),
   ); // 100 saal pehle
 
+  const GooglePlacesInput = ({setFieldValue, setModalVisible}) => {
+    return (
+      <GooglePlacesAutocomplete
+        placeholder="Search"
+        fetchDetails
+        onPress={(data, details = null) => {
+          const address = data.description; // or customize from `details`
+          setFieldValue('location', address);
+          setModalVisible(false);
+        }}
+        query={{
+          key: 'AIzaSyA3KL0M0YCQHnn01U_cnFh-KeUZdH3UaGc',
+          language: 'en',
+        }}
+      />
+    );
+  };
+
   const calculateAge = birthDate => {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -113,25 +130,6 @@ const DetailsFill = ({route}) => {
       console.error('Error storing user details:', error);
     }
   };
-
-  const handleLocationSearch = async query => {
-    if (query.trim()) {
-      try {
-        const response = await Geocoding.from(query);
-        setLocationSuggestions(response.results);
-      } catch (error) {
-        console.error('Error fetching location suggestions:', error);
-      }
-    } else {
-      setLocationSuggestions([]);
-    }
-  };
-
-  const handleLocationSelect = (location, handleChange) => {
-    handleChange('location')(location.formatted_address);
-    setModalVisible(false);
-  };
-
   return (
     <KeyboardAvoidingView
       style={{flex: 1}}
@@ -220,96 +218,22 @@ const DetailsFill = ({route}) => {
                     {touched.name && errors.age && (
                       <Text style={styles.errorText}>{errors.age}</Text>
                     )}
-
-                    <View style={{flex: 1}}>
-                      {/* Your custom text input */}
-                      <CustomTextInput
-                        placeholder={Texts.Location}
-                        onChangeText={text => {
-                          handleChange('location')(text);
-                          handleLocationSearch(text);
-                        }}
-                        onBlur={handleBlur('location')}
-                        value={values.location}
-                        onFocus={() => setModalVisible(true)}
+                    <CustomTextInput
+                      placeholder={Texts.Location}
+                      onChangeText={text => setFieldValue('location', text)}
+                      onBlur={handleBlur('location')}
+                      value={values.location}
+                      onFocus={() => setModalVisible(true)}
+                    />
+                    {touched.location && errors.location && (
+                      <Text style={styles.errorText}>{errors.location}</Text>
+                    )}
+                    <Modal visible={modalVisible}>
+                      <GooglePlacesInput
+                        setFieldValue={setFieldValue}
+                        setModalVisible={setModalVisible}
                       />
-                      {touched.location && errors.location && (
-                        <Text style={styles.errorText}>{errors.location}</Text>
-                      )}
-
-                      {/* Location Search Modal */}
-                      <Modal
-                        visible={modalVisible}
-                        animationType="slide"
-                        transparent={true}
-                        onRequestClose={() => setModalVisible(false)}>
-                        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                          <View
-                            style={{
-                              flex: 1,
-                              backgroundColor: 'rgba(0,0,0,0.3)',
-                              justifyContent: 'flex-end',
-                            }}>
-                            <KeyboardAvoidingView
-                              behavior={
-                                Platform.OS === 'ios' ? 'padding' : undefined
-                              }
-                              style={{flex: 1}}>
-                              <View
-                                style={{
-                                  backgroundColor: 'white',
-                                  height: '60%',
-                                  padding: 10,
-                                }}>
-                                <TextInput
-                                  ref={textInputRef}
-                                  style={{
-                                    borderWidth: 1,
-                                    padding: 8,
-                                    marginBottom: 10,
-                                  }}
-                                  placeholder="Search for a location"
-                                  onChangeText={text => {
-                                    handleLocationSearch(text);
-                                    formikRef.current?.setFieldValue(
-                                      'location',
-                                      text,
-                                    );
-                                  }}
-                                  value={formikRef.current?.values.location}
-                                  autoFocus // Helps with keyboard focus
-                                />
-
-                                <FlatList
-                                  data={locationSuggestions}
-                                  renderItem={({item}) => (
-                                    <TouchableOpacity
-                                      onPress={() =>
-                                        handleLocationSelect(item)
-                                      }>
-                                      <Text style={{padding: 10}}>
-                                        {item.formatted_address}
-                                      </Text>
-                                    </TouchableOpacity>
-                                  )}
-                                  keyExtractor={(item, index) =>
-                                    index.toString()
-                                  }
-                                  keyboardShouldPersistTaps="handled"
-                                />
-
-                                <TouchableOpacity
-                                  onPress={() => setModalVisible(false)}
-                                  style={{marginTop: 10}}>
-                                  <Text>Cancel</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </KeyboardAvoidingView>
-                          </View>
-                        </TouchableWithoutFeedback>
-                      </Modal>
-                    </View>
-
+                    </Modal>
                     <CustomTextInput
                       placeholder={Texts.Email_Address}
                       onChangeText={text =>

@@ -45,7 +45,7 @@ const StackNavigation = () => {
         gestureEnabled: false,
         gestureDirection: 'horizontal',
       }}>
-      <Stack.Screen name={ROUTE_NAMES.SplashScreen} component={DetailsFill} />
+      <Stack.Screen name={ROUTE_NAMES.SplashScreen} component={SpleshScreen} />
       <Stack.Screen name={ROUTE_NAMES.SignIn} component={SignIn} />
       <Stack.Screen name={ROUTE_NAMES.SignUp} component={SignUp} />
       <Stack.Screen
